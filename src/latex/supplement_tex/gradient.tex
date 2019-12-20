@@ -1,0 +1,117 @@
+All notations are introduced in the Materials and Methods section.
+
+\subsubsection*{Beta-binomial model}
+
+We use the following parameterization of the beta-binomial distribution:
+
+\begin{align*}
+P(k| n, \alpha, \beta) = \frac{\Gamma(n+1)}{\Gamma(k+1)\Gamma(n-k+1)} 
+\frac{\Gamma(\alpha + k)\Gamma(\beta + n - k)}{\Gamma(\alpha + \beta + n)}
+\frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)},
+\end{align*}
+
+where 
+
+\begin{align*}
+\alpha &= \mu \left(\frac{1-\rho}{\rho}\right) \text{and } \beta = (\mu - 1)\left(\frac{\rho - 1}{\rho}\right).
+\end{align*}
+
+The variance of the distribution is given by:
+
+\begin{align*}
+Var = \frac{\mu (1 - \mu) (1 + (n-1)\rho )}{n}.
+\end{align*}
+
+
+\subsubsection*{The negative log-likelihood of the beta-binomial distribution}
+
+The negative log-likelihood ($\text{nll}$) of the model is given by:
+
+\begin{align*}
+\text{nll}=& - \sum_{ij}\log( \Gamma(n_{ij}+1)) + \sum_{ij}log(\Gamma(k_{ij}+1)) + \sum_{ij}\log(\Gamma(n_{ij}-k_{ij}+1)) \\
+&- \sum_{ij}\log(\Gamma(\alpha_{ij}+k_{ij})) - \sum_{ij}\log(\Gamma(\beta_{ij}+n_{ij}-k_{ij})) + \sum_{ij}\log(\Gamma(\alpha_{ij} + \beta_{ij} + n_{ij})) \\
+&+ \sum_{ij}\log(\Gamma(\alpha_{ij})) + \sum_{ij}\log(\Gamma(\beta_{ij})) - \sum_{ij}\log(\Gamma(\alpha_{ij} + \beta_{ij})).
+\end{align*}
+
+
+For the optimization of the model only the terms of $\text{nll}$
+that are dependent on $\matr{W}_e$ and $\matr{W}_d$ need to be considered. 
+Since
+\begin{align*}
+\alpha + \beta = \frac{1-\rho}{\rho}
+\end{align*}
+is independent of $\mu$ and therefore independent of $\matr{W}_e$ and $\matr{W}_d$,
+we do not have to consider the terms containing $\alpha + \beta$ and yield the 
+following truncated form of the negative log likelihood, with pseudocounts of 
+$1$ and $2$ added to $k$ and $n$, respectively:
+
+\begin{align} \label{eq:nll-w}
+\text{nll}_{\matr{W}} =& \sum_{ij}\log(\Gamma(\alpha_{ij})) + \sum_{ij}\log(\Gamma(\beta_{ij})) \\
+&- \sum_{ij}\log(\Gamma(\alpha_{ij}+k_{ij}+1)) - \sum_{ij}\log(\Gamma(\beta_{ij}+n_{ij}-k_{ij}+1)).
+\end{align}
+
+
+In the following $y_{ij}$ is an element of $\matr{Y}$ defined as:
+
+\begin{align}\label{eq:Y}
+\matr{Y} &= \matr{\widetilde{X}} \matr{W}_e \matr{W}_d + \matr{b},
+\end{align}
+
+where the element $\widetilde{x}_{ij}$ of the matrix $\matr{\widetilde{X}}$ is given by: 
+
+\begin{align*}
+\widetilde{x}_{ij} &= x_{ij} - \bar{x}_j, \\
+x_{ij} &= \text{logit} \left (\frac{k_{ij}+1}{n_{ij}+2} \right),
+\text{logit}(a) &= \log \frac{a}{1-a}.
+\end{align*}
+
+The expectations $\mu_{ij}$ are then modeled by:
+
+\begin{align*}
+\mu_{ij} &= \sigma \left (y_{ij} \right) = \frac{e^{y_{ij}}}{1 + e^{y_{ij}}}
+\end{align*}
+
+%The full form of the term $\log(\Gamma(\alpha))$ is therefore:
+%\begin{align*}
+%\log(\Gamma(\alpha)) &= \log(\Gamma(\mu \frac{1-\rho}{\rho})) = \log\left(\Gamma\left(\frac{e^{\hat{X}}}{1+e^{\hat{X}}}\frac{1-\rho}{\rho}\right)\right) 
+%\end{align*}
+
+Hence,  $\text{nll}_{\matr{W}}$ can be rewritten as:
+
+\begin{align*}
+\text{nll}_{\matr{W}} =& \sum_{ij}\log\left(\Gamma\left(\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} }\frac{ 1-\rho_{ij} }{ \rho_{ij} }\right) \right) \\
+&+ \sum_{ij}\log\left(\Gamma\left( \left (\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} } - 1 \right) \frac{ \rho_{ij} - 1 }{ \rho_{ij} }\right) \right) \\
+&- \sum_{ij}\log\left(\Gamma\left(\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} }\frac{ 1-\rho_{ij} }{ \rho_{ij} } + k_{ij} + 1 \right) \right) \\ 
+&- \sum_{ij}\log\left(\Gamma\left( \left (\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} } - 1 \right) \frac{ \rho_{ij} - 1 }{ \rho_{ij} } + n_{ij} - k_{ij} + 1\right) \right) 
+\end{align*}
+
+
+We use L-BFGS\cite{byrd1995} as implemented in $optim$  to fit the autoencoder
+model as described in Methods.
+
+
+\subsubsection*{Update of the encoder and decoder matrix}
+
+The updating of the matrix $\matr{W}_d$ is performed intron-wise where as the 
+encoder matrix $\matr{W}_e$ is performed on the full matrix. For each update step,
+the intron-wise or matrix-wise average negative log likelihood is minimized. 
+To not run into convergence issues or numerical instability of the digamma function, 
+we estimate the value of the digamma function $\psi$ if not $-35 < y_{ij} < 30$.
+From Equation \ref{eq:nll-w} and Equation \ref{eq:Y}, we obtain the gradients:
+
+\begin{align*}
+    \frac{d\text{nll}}{d\matr{W}_e} &= \matr{\widetilde{X}}^T \matr{A} \matr{W}_d + \matr{\widetilde{X}}^T \matr{B} \matr{W}_d - \matr{\widetilde{X}}^T \matr{C} \matr{W}_d - \matr{\widetilde{X}}^T \matr{D} \matr{W}_d  \\  
+    \frac{d\text{nll}}{d\matr{W}_d} &= \matr{A}^T \matr{\widetilde{X}} \matr{W}_e + \matr{B}^T \matr{\widetilde{X}}\matr{W}_e - \matr{C}^T \matr{\widetilde{X}}\matr{W}_e - \matr{D}^T \matr{\widetilde{X}} \matr{W}_e \\
+    \frac{d\text{nll}}{db_j} &= \sum_{i} a_{ij} + b_{ij} - c_{ij} - d_{ij}
+    \end{align*},
+
+where the components of the matrices $\matr{A}, \matr{B}, \matr{C}$ and $\matr{D}$ are computed by:
+\begin{align*}
+	a_{ij} &= \psi \left( \frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} } \cdot r_{ij} \right) \cdot r_{ij} \cdot v_{ij}    \\
+	b_{ij} &= \psi \left( \left (\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} } - 1 \right) \cdot (-r_{ij} \right) \cdot (-r_{ij}) \cdot v_{ij} \\
+	c_{ij} &= \psi \left( \frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} } \cdot r_{ij} + k_{ij} + 1 \right) \cdot r_{ij} \cdot v_{ij}    \\
+	d_{ij} &= \psi \left( \left (\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} } - 1 \right) \cdot (-r_{ij} + n_{ij} - k_{ij} + 1 \right) \cdot (-r_{ij}) \cdot v_{ij} \\
+	v_{ij} &= \frac{e^{y_{ij}}}{\left(1+e^{y_{ij}}\right)^2} \\
+    r_{ij} &= \frac{1 - \rho_{j} }{ \rho_j }  
+\end{align*}.
+

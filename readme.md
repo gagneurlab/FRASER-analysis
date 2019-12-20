@@ -35,6 +35,9 @@ First download the repo and its dependencies:
 git clone https://github.com/gagneurlab/FRASER
 git clone https://i12g-gagneurweb.in.tum.de/gitlab/mertes/rare-disease-leafcutter
 
+# download needed SRA annotation db
+wget -O - 'https://s3.amazonaws.com/starbuck1/sradb/SRAmetadb.sqlite.gz' | gunzip -c > 'Data/filemapping/SRAmetadb.sqlite'
+
 # analysis code
 git clone https://github.com/gagneurlab/FRASER-analysis
 cd FRASER-analysis
@@ -63,10 +66,14 @@ Rscript ./src/r/install_dependencies.R
 
 ## Run the full pipeline
 
-To run the full pipeline, execute the following command with 10 cores in parallel:
+To run the full pipeline, execute the following command with 10 jobs and maximum 40 cores in parallel:
 
 ```
-snakemake -j 10
+# init dataset to be used
+snakemake -j 25 --cores 25 defineDatasets
+
+# run full analysis on datasets
+snakemake -j 10 --cores 40
 ```
 
 or to run it on the cluster with SLUM installed: 

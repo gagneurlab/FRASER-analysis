@@ -1,0 +1,115 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\author{Ines Scheller}
+\begin{document}
+
+\begin{center}{\textbf{FraseR autoencoder gradients}}\end{center} 
+Beta binomial density:
+\begin{align*}
+BetaBin(k | n, \alpha, \beta) &= \binom{n}{k} \cdot \frac{Be(\alpha + k, \beta + n -k)}{Be(\alpha, \beta)} \\
+&= \frac{\Gamma(n+1)}{\Gamma(k+1)\Gamma(n-k+1)} \cdot \frac{\Gamma(\alpha + k)\Gamma(\beta + n - k)}{\Gamma(\alpha + \beta + n)} \cdot \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)}
+\end{align*}
+Parametrization with $\mu$ and $\rho$:
+\begin{align*}
+\mu &= \frac{\alpha}{\alpha + \beta} \hspace{3cm} \rho = \frac{1}{1 + \alpha + \beta} \\
+&\Rightarrow \alpha = \mu \left(\frac{1-\rho}{\rho}\right) \hspace{1cm} \beta = (\mu - 1)\left(\frac{\rho - 1}{\rho}\right)
+\end{align*}
+$\alpha + \beta$ is only dependent on $\rho$:
+\begin{align*}
+\alpha + \beta &= \mu (\frac{1}{\rho} - 1) + \frac{(\mu - 1)(\rho - 1)}{\rho} = \frac{\mu(1-\rho)}{\rho} + \frac{-(1-\mu)-(1-\rho)}{\rho} \\
+&= \frac{\mu(1-\rho) + (1-\mu)(1-\rho)}{\rho} = \frac{(1-\rho)\left(\mu + (1 - \mu)\right)}{\rho} \\
+&= \frac{1-\rho}{\rho} = \frac{1}{\rho} - 1
+\end{align*}
+Definition of $\mu_{ij}$ and $x_{ij}$:
+\begin{align*}
+Y &= XW_eW_d^T + b \\
+logit(\mu_{ij}) &= y_{ij} \Rightarrow \mu_{ij} = \frac{e^{y_{ij}}}{1+e^{y_{ij}}} \\
+x_{ij} &= logit\left(\frac{k_{ij} + \frac{1}{2}}{n_{ij}+1} \right)
+%\\logit(p_{ij}) &= HW_{d}^{T} = \sum_{m}{h_{im}w_{d_{jm}}} = \sum_{lm}{x_{il}w_{e_{lm}}w_{d_{jm}}} = y_{ij}\\
+%\mu_{ij} = p_{ij} &= \frac{e^{y_{ij}}}{1 + e^{y_{ij}}} = \frac{e^{\sum_{lm}{x_{il}w_{e_{lm}}w_{d_{jm}}}}}{1 + e^{\sum_{lm}{x_{il}w_{e_{lm}}w_{d_{jm}}}}} 
+\end{align*}
+Negative log-likelihood:
+\begin{align*}
+nll &= - \log\left(\frac{\Gamma(n+1)}{\Gamma(k+1)\Gamma(n-k+1)} \cdot \frac{\Gamma(\alpha + k)\Gamma(\beta + n - k)}{\Gamma(\alpha + \beta + n)} \cdot \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)}\right) \\
+	&= -\log\left(\frac{\Gamma(n+1)}{\Gamma(k+1)\Gamma(n-k+1)} \right) -\log\left(\frac{\Gamma(\alpha + k)\Gamma(\beta + n - k)}{\Gamma(\alpha + \beta + n)} \right) -\log\left(\frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \right) \\
+\ \\
+	&= - \log( \Gamma(n+1)) + log(\Gamma(k+1)) + \log(\Gamma(n-k+1)) -\log(\Gamma(\alpha+k)) - \log(\Gamma(\beta+n-k)) \\
+	&+ \log(\Gamma(\alpha + \beta + n)) + \log(\Gamma(\alpha)) + \log(\Gamma(\beta)) - \log(\Gamma(\alpha + \beta)) \\ \ \\
+nll_{\textbf{W}} &= \log(\Gamma(\alpha)) + \log(\Gamma(\beta)) - \log(\Gamma(\alpha+k)) - \log(\Gamma(\beta+n-k)) \\
+\end{align*}
+NLL with pseudocounts ($k+1$, $n+2$):
+\begin{align*}
+	nll_{\textbf{W}} &= \log(\Gamma(\alpha)) + \log(\Gamma(\beta)) - \log(\Gamma(\alpha+k+1)) - \log(\Gamma(\beta+n-k+1)) \\
+\end{align*}
+Full form of $\log(\Gamma(\alpha))$:
+\begin{align*}
+\log(\Gamma(\alpha)) &= \log(\Gamma(\mu \frac{1-\rho}{\rho})) = \log\left(\Gamma\left(\frac{e^Y}{1+e^Y}\frac{1-\rho}{\rho}\right)\right) \\
+&=  \log\left(\Gamma\left(\left(\frac{e^{XW_eW_d^T + b}}{1+e^{XW_eW_d^T + b}}\right)\left(\frac{1-\rho}{\rho}\right)\right)\right)
+\end{align*}
+Derivatives:
+\begin{align*}
+\frac{d}{d\alpha}\left[\log(\Gamma(\alpha))\right] &= \psi^{(0)}(\alpha) \\%= digamma(\alpha) \\
+\frac{d}{d\mu}\left[\mu\left(\frac{1-\rho}{\rho}\right)\right] &= \frac{1-\rho}{\rho}\\
+\frac{d}{dY}\left[\frac{e^Y}{1+e^Y}\right] &= \frac{e^Y}{\left(1+e^Y\right)^2} \\
+\frac{d}{dW_d}\left[XW_eW_d^T + b \right] &= XW_e \\
+\frac{d}{dW_e}\left[XW_eW_d^T + b \right] &= X^TW_d \\
+\frac{d}{d b}\left[XW_eW_d^T + b \right] &= 1
+\end{align*}
+Derivatives of the first term of the negative log-likelihood:
+\begin{align*}
+\frac{d}{d W_{d}} \log(\Gamma(\alpha)) &= \frac{d}{d W_{d}} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right)\right)\right)\\
+%	&= \frac{d \log(\Gamma(\alpha))}{d \alpha} \cdot \frac{d \alpha}{d \mu} \cdot \frac{d \mu}{d Y} \cdot \frac{d Y}{d W_{d}}\\
+	&= \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right) \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right)^T XW_e \\
+	\ \\
+\frac{d}{d W_{e}} \log(\Gamma(\alpha)) &= \frac{d}{d W_{e}} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right)\right)\right)\\ 
+%	&= \frac{d \log(\Gamma(\alpha))}{d \alpha} \cdot \frac{d \alpha}{d \mu} \cdot \frac{d \mu}{d Y} \cdot \frac{d Y}{d W_{e}}\\
+	&= X^T \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right) \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right) W_d \\
+	\ \\
+\frac{d}{d b} \log(\Gamma(\alpha)) &= \frac{d}{d b} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right)\right)\right)\\
+%	&= \frac{d \log(\Gamma(\alpha))}{d \alpha} \cdot \frac{d \alpha}{d \mu} \cdot \frac{d \mu}{d Y} \cdot \frac{d Y}{d b}\\
+	&= \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right) \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right)^T
+\end{align*}
+Derivatives of the second term of the negative log-likelihood:
+\begin{align*}
+\frac{d}{d W_{d}} \log(\Gamma(\beta)) &= \frac{d}{d W_{d}} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right)\right)\right)\\
+	&= \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right)^T XW_e \\
+	\ \\
+\frac{d}{d W_{e}} \log(\Gamma(\beta)) &= \frac{d}{d W_{e}} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right)\right)\right)\\
+&= X^T \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y)}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right) W_d \\
+\ \\
+\frac{d}{d b} \log(\Gamma(\beta)) &= \frac{d}{d b} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right)\right)\right)\\
+&= \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right)^T
+\end{align*}
+Derivatives of the third term of the negative log-likelihood:
+\begin{align*}
+\frac{d}{d W_{d}} \log(\Gamma(\alpha + k + 1)) &= \frac{d}{d W_{d}} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right)\right) + k + 1 \right)\\
+%	&= \frac{d \log(\Gamma(\alpha + k + 1))}{d \alpha} \cdot \frac{d \alpha}{d \mu} \cdot \frac{d \mu}{d Y} \cdot \frac{d Y}{d W_{d}}\\
+&= \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right)  + k + 1 \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right)^T XW_e \\
+\ \\
+\frac{d}{d W_{e}} \log(\Gamma(\alpha + k + 1)) &= \frac{d}{d W_{e}} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right)\right) + k + 1 \right)\\ 
+%	&= \frac{d \log(\Gamma(\alpha))}{d \alpha} \cdot \frac{d \alpha}{d \mu} \cdot \frac{d \mu}{d Y} \cdot \frac{d Y}{d W_{e}}\\
+&= X^T \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right)  + k + 1 \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right) W_d \\
+\ \\
+\frac{d}{d b} \log(\Gamma(\alpha + k + 1)) &= \frac{d}{d b} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right)\right) + k + 1 \right)\\
+%	&= \frac{d \log(\Gamma(\alpha))}{d \alpha} \cdot \frac{d \alpha}{d \mu} \cdot \frac{d \mu}{d Y} \cdot \frac{d Y}{d b}\\
+&= \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}}\right)\left(\frac{1-\rho}{\rho}\right) + k + 1 \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right)^T
+\end{align*}
+Derivatives of the fourth term of the negative log-likelihood:
+\begin{align*}
+\frac{d}{d W_{d}} \log(\Gamma(\beta + n - k + 1)) &= \frac{d}{d W_{d}} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right)\right)\\
+&= \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right)^T XW_e \\
+\ \\
+\frac{d}{d W_{e}} \log(\Gamma(\beta + n - k + 1)) &= \frac{d}{d W_{e}} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right)\right)\\
+&= X^T \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right) W_d \\
+\ \\
+\frac{d}{d b} \log(\Gamma(\beta + n - k + 1)) &= \frac{d}{d b} \log\left(\Gamma\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right)\right)\\
+&= \left(\psi\left(\left(\frac{e^{Y}}{1+e^{Y}} - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right)^T
+\end{align*}
+
+\end{document}

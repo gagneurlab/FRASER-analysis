@@ -1,0 +1,243 @@
+#'---
+#' title: P-value calculation checking
+#' author: Christian Mertes
+#' wb:
+#'   Input: asdf
+#' output:
+#'  html_document
+#'---
+library(VGAM)
+library(BBmisc)
+library(ExomeDepth)
+library(statmod)
+library(renjin)
+source("./src/r/config.R")
+load_all(PKG_ROOT)
+
+visible_defects <- data.table(rbind(
+    c(sampleID="SRR1098761", chr=2, start=74326401, filterIdx=1, type="psi3"),
+    c("SRR1079070", 2, 176860375, 1, "skipping_psi5"),
+    c("SRR1095627", 4, 38942588,  1, "skipping_psi3"),
+    c("SRR1096782", 5, 34949783,  1, "skipping_psi5"),
+    c("SRR1470481", 9, 123639258, 1, "alternative_end_psi3"),
+    c("SRR1096782", 11, 62601147, 1, "skipping_psi5"),
+    c("SRR1096782", 13, 42031894, 4, "elongation_psi5")
+))
+
+debug(loadFraseRDataSet)
+#fds <- loadFraseRDataSet("~/fraser-datasets/datasets", "gtex-fibroblast-transformed")
+fds <- loadFraseRDataSet("/s/project/fraser/analysis/datasets/", "gtex-fibroblast-transformed")
+fds <- fds[na2false(mcols(fds, type="j")[["psi3_tested"]])]
+deltapsi <- as(abs(assays(fds)[["delta_psi3"]]), "matrix")
+seediff <- which(apply(deltapsi, 1, max) > 0.1)
+fds <- fds[sort(sample(seediff, 50000))]
+fds <- fds[sample(1:50000, 1000)]
+names(fds) <- "testing_pvalu_calc"
+fds <- saveFraseRDataSet(fds)
+sum(seediff)
+fds
+
+gr <- granges(fds)
+options("FraseR-hdf5-cores" = 2)
+
+data.table(start(gr[seqnames(gr) == 18]))[,.N,by=V1][N==4][,V1]
+gr1 <- gr[start(gr) %in% data.table(start(gr[seqnames(gr) == 18]))[,.N,by=V1][N==4][,V1]]
+fds <- fds[gr1]
+parallel(fds) <- MulticoreParam(8, 16)
+names(fds) <- "testing_pval_calc"
+fds <- calculatePSIValues(fds)
+
+#'
+#' generate sample data
+#'
+Ns <- 200
+Nr <- 150
+prob <- 0.99
+rho <- 0.1
+alternative <- "less"
+randDP <- 0.5
+randDP <- FALSE
+generateSampleData <- function(Ns=200, nr=150, prob=0.9, rho=0.1,
+            randDP=FALSE, ys=NA, os=NA, alternative="less"){
+    y <- rbetabinom(Ns, nr, prob, rho)
+    o <- rbetabinom(Ns, 10, 1-prob, rho)
+    #o <- nr - y
+    mat <- cbind(y,o)
+    if(is.numeric(randDP)){
+        mat <- ceiling(mat*runif(Ns, min=randDP))
+    }
+    if(is.numeric(ys)){
+        mat[1,1] <- ys
+    }
+    if(is.numeric(os)){
+        mat[1,2] <- os
+    }
+    return(mat)
+}
+
+testBetaBin <- function(mat, ...){
+    betabinVglmTest(mat, ...)
+}
+
+countPlot <- function(mat){
+    plot(rowSums(mat), mat[,1],
+            xlim=c(0,max(rowSums(mat), na.rm=TRUE)),
+            ylim=c(0,max(mat[,1], na.rm=TRUE)))
+}
+
+qqplot <- function(p){
+
+    o <- -log10(sort(p))
+
+    n <- length(o)
+    pp <- ppoints(n)
+    e <- -log10(pp)
+
+    maxy <- max(e)*2
+    ylim <- c(0, min(max(o, max(e)), maxy))
+
+    plot(e, o, ylim=ylim)
+    outofRange <- o > maxy
+    if(any(outofRange)){
+        points(e[outofRange], y=rep(maxy, sum(outofRange)), pch=16)
+    }
+    grid()
+    abline(0,1)
+}
+
+normNo <- function(mat) { mat }
+
+normPlusOne <- function(mat) { mat + 1}
+
+normDP <- function(mat, targetDP=max(rowSums(mat)), multiply=1, offset=1e-4){
+    sizeFactor <- targetDP/rowSums(mat)
+    multiplier <- ifelse(sizeFactor >= 1, multiply, 1/multiply)
+    mat <- mat*(sizeFactor*multiplier)
+    mat <- mat+offset
+    mat <- ceiling(mat)
+    return(mat)
+}
+
+normDPHalf <- function(mat, multiply=0.25){
+    normDP(mat, multiply=multiply)
+}
+
+myNormFunctions <- c(
+    noNorm = normNo,
+    normPlusOne = normPlusOne,
+    normDP = normDP,
+    normDPHalf = normDPHalf
+)
+
+
+createPlot <- function(norm=function(x){x}, seed=42, alternative="less", mat=NULL, ...){
+    set.seed(seed)
+    oldPar <- par(no.readonly=TRUE)
+    on.exit(par(oldPar))
+    par(mfrow=c(2,2))
+
+    # get data
+    if(is.null(mat)){
+        mat <- generateSampleData(...)
+    }
+    countPlot(mat)
+
+    # norm data
+    matn <- norm(mat)
+    countPlot(matn)
+
+    res <- testBetaBin(matn, alternative=alternative)
+
+    qqplot(res$pval)
+
+    return(c(
+        res,
+        list(mat=cbind(mat, matn))
+    ))
+}
+
+overNormFunctions <- function(normFun, ...){
+    res <- list()
+    for(idx in seq_along(normFun)){
+        currRes <- createPlot(norm=normFun[[idx]], ...)
+        res <- append(res, currRes)
+        title(names(normFun)[idx])
+    }
+    res
+}
+
+getCountsForJunction <- function(idx, fds, jcts, type, typeIdx=1){
+    idx <-7
+    jcts <- visible_defects
+    jcts <- jcts[idx]
+    type <- "psiSite"
+    typeIdx <- 1
+    gr <- makeGRangesFromDataFrame(keep.extra.columns=TRUE, jcts[,.(chr=chr,
+            start=as.integer(start), end=as.integer(start)+1, sampleID, type)])
+    cfds <- fds[gr][as.integer(jcts[,filterIdx])]
+
+    y <- counts(cfds, type=type, side="ofI")[typeIdx,]
+    o <- counts(cfds, type=type, side="other")[typeIdx,]
+    t(as.matrix(rbind(y,o)))
+}
+
+overNormFunctions(normFun=myNormFunctions, alternative="less",
+        prob=0.99, rho=0.1,  randDP=0.7)
+
+overNormFunctions(normFun=myNormFunctions, alternative="two.sided",
+        prob=0.99, rho=0.1, randDP=0.7)
+
+overNormFunctions(normFun=myNormFunctions, alternative="t",
+        prob=0.9, rho=0.1, randDP=0.7)
+
+overNormFunctions(normFun=myNormFunctions, alternative="greater",
+        prob=0.99, rho=0.1, randDP=0.7, ys=15, os=30)
+
+res <- overNormFunctions(normFun=c(nonorm=normNo), alternative="t",
+                  prob=0.99, rho=0.1, randDP=0.7)
+res
+
+test <- function(){
+    renjin({
+        library(VGAM)
+        overNormFunctions(normFun=myNormFunctions, alternative="two.sided",
+            prob=0.9, rho=0.1, randDP=0.7, ys=15, os=30)})
+
+    y <- rpois(20,lambda=0.1)
+    x <- 1:20
+    fit <- glm(y~x, family=poisson)
+    qr <- residuals(fit)
+    qr <- qresiduals(fit)
+    qqnorm(qr)
+    abline(0,1)
+    plot(y,x)
+    i=5
+    overNormFunctions(normFun=myNormFunctions, mat=rbind(c(10,10),t(rbind(dts[i,], dtos[i,]))),
+            alternative="two.sided")
+
+    i=5
+    overNormFunctions(normFun=myNormFunctions, mat=rbind(c(10,10),t(rbind(dts[i,], dtos[i,]))),
+                      alternative="two.sided")
+
+    i=7
+    overNormFunctions(normFun=myNormFunctions, mat=getCountsForJunction(i, fds, visible_defects, "psiSite", 1))
+
+
+    debug(loadFraseRDataSet)
+    fds <- loadFraseRDataSet("~/fraser-datasets/datasets", "gtex-fibroblast-transformed")
+
+    y <- rbinom(100, 50, 0.7)
+    x <- 1:100
+    fit <- glm(x~y,family=binomial, data.frame(y=y,x=x))
+    summary(qresiduals(fit))
+    fit <- glm.nb(Days~Age,link=log,data = quine)
+    summary(qresiduals(fit))
+
+    y <- rbinom(100, 1, plogis(x))
+    # needs to set a starting value for the next fit
+    fit <- glm(y ~ x, family = quasi(variance = "mu(1-mu)", link = "logit"), start = c(0,1))
+    fit$residuals
+    plot(sort(qresiduals(fit)), fit$residuals)
+
+    renjin(rbetabinom(Ns, Nr, prob, rho))
+}

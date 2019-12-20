@@ -1,0 +1,94 @@
+#
+# Snake rules to generate the needed vcf files
+#
+# rare variants
+#  + splicing variants
+#  + high/modest impact
+#
+
+rule extractModeratNHighAnnoFromGTEx:
+    input: vcfanno = config["GTEXVCF_ANNO"]
+    output: subvcfannotbi = config["DATADIR"] + "/GTEx_variant_enrichment/rareModerateNHighVariants.vcf.gz.tbi"
+    shell:
+        """
+            vcfAnnoFileTbi={output.subvcfannotbi}
+            maxAF=0.05
+
+            vcfAnnoFile=${{vcfAnnoFileTbi%.tbi}}
+            bcftools view --max-af $maxAF --max-alleles 2 {input.vcfanno} | \
+                grep -P '(^#)|(\|(MODERATE|HIGH)\|)' | \
+                bgzip -c -l 9 -@ 4 > $vcfAnnoFile
+            tabix $vcfAnnoFile
+        """
+
+
+rule extractSplicingAnnoFromGTEx:
+    input: vcfanno = config["GTEXVCF_ANNO"]
+    output: subvcfannotbi = config["DATADIR"] + "/GTEx_variant_enrichment/rareSplicingVariants.vcf.gz.tbi"
+    shell:
+        """
+        vcfAnnoFileTbi={output.subvcfannotbi}
+        maxAF=0.05
+
+        vcfAnnoFile=${{vcfAnnoFileTbi%.tbi}}
+        bcftools view --max-af $maxAF --max-alleles 2 {input.vcfanno} | \
+            grep -P '(^#)|([|&]splice_)' | \
+            bgzip -c -l 9 -@ 4 > $vcfAnnoFile
+        tabix $vcfAnnoFile
+    """
+
+
+rule extractGenoTypeFromGTEx:
+    input: subvcfannotbi = config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}Variants.vcf.gz.tbi",
+        vcfgt = config["GTEXVCF_GT"]
+    output: subvcfgttbi =  config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}_gt.vcf.gz.tbi"
+    shell:
+        """
+            set -x
+            vcfAnnoFileTbi={input.subvcfannotbi}
+            vcfGTFileTbi={output.subvcfgttbi}
+            maxAF=0.05
+
+            vcfAnnoFile=${{vcfAnnoFileTbi%.tbi}}
+            vcfGTFile=${{vcfGTFileTbi%.tbi}}
+
+            bcftools view --regions-file $vcfAnnoFile --max-af $maxAF {input.vcfgt} | \
+                bcftools sort --max-mem 20G --temp-dir '{input.subvcfannotbi}.tmp/' | \
+                bgzip -c -l 9 -@4 > $vcfGTFile
+            tabix $vcfGTFile
+        """
+
+rule Enrichment:
+    input: expand(config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}__{snptype}.RDS", snptype=["rareSplicing", "rareModerateNHigh", "rareMMSplice"], dataset=config["EnrichmentTissues"])
+    output: touch(htmlOutputPath + "/enrichment.done")
+
+
+rule redoEnrichment:
+    input: 
+            expand(config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}__{snptype}.RDS", snptype=["rareSplicing", "rareModerateNHigh", "rareMMSplice"], dataset=config["EnrichmentTissues"]),
+            expand(config["DATADIR"] + "/processedData/results/{dataset}/{method}_results.tsv", method=config["methods"], dataset=list(set(config["EnrichmentTissues"])))
+    shell: """
+        echo 'done with all GTEx enrichments'
+        echo {input}
+        """
+
+rule redoRes:
+    input: 
+            expand(config["DATADIR"] + "/processedData/results/{dataset}/{method}_results.tsv", method=config["methods"], dataset=list(set(config["EnrichmentTissues"])))
+#            expand(config["DATADIR"] + "/processedData/results/{dataset}/{method}_results.tsv", method=config["methods"], dataset=list(set(config["datasets"] + config["EnrichmentTissues"]))),
+#            expand(config["DATADIR"] + "/processedData/leafcutter/{dataset}/results_{dataset}.tsv", dataset=list(set(config["datasets"] + config["EnrichmentTissues"])))
+    shell: """
+        echo 'done with all results for Enrichment'
+        echo {input}
+        """
+
+
+rule redoStats:
+    input: 
+            expand(config["DATADIR"] + "/processedData/results/{dataset}/{method}_stats.RDS", method=config["methods"], dataset=list(set(config["EnrichmentTissues"])))
+    shell: """
+        echo 'done with all stats'
+        echo {input}
+        """
+
+

@@ -1,0 +1,9 @@
+body .main-container {
+  max-width: 2000px;
+}
+
+body div.main-container {
+  max-width: 2000px;
+  margin: auto;
+}
+

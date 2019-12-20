@@ -1,0 +1,142 @@
+---
+webDir: ./path/to/your/webspace/FRASER-analysis
+projectTitle: FRASER-analysis
+htmlOutputPath: "Output/html"
+fileRegex: .*\.R
+
+# default variables
+DATADIR:        "Output/data"
+FIGDATADIR:     "Output/figurmentTissues:iata"
+FIGDIR:         "Output/paper_figures"
+PACKAGE_DIR:    "../FRASER"
+
+# datasets
+datasets: [
+    "Skin_Not_Sun_Exposed_Suprapubic",
+    "Kremer",
+]
+
+# psi types
+psiTypes: [
+  "psi3",
+  "psi5",
+  "psiSite"
+]
+
+# cutoffs
+MAF_LIMIT:         0.05
+FDR_LIMIT:         0.1
+Z_LIMIT:           0.00
+AE_IMPLEMENTATION: 'PCA'
+OUTLIER_INJ_FREQ:  0.001
+MIN_DPSI:          0.2
+dPsiCutoff:        0.1
+
+# GTF annotation
+GTF_FILE: Data/rawdata/gencode.v28lift37.annotation.gtf.gz
+
+# raw count data Kremer
+KREMER_SAMPLE_ANNOTATION_FILE: Data/rawdata/Kremer_sample_annotation.tsv
+KREMER_FILE_MAPPING:           Data/filemapping/Kremer.tsv
+
+# raw count data GTEx (V7)
+GTEX_SAMPLE_ANNOTATION_FILE: Data/rawdata/V7/GTEx_v7_Annotations_SampleAttributesDS.txt
+GTEX_PHENO_ANNOTATION_FILE:  Data/rawdata/V7/GTEx_v7_Annotations_SubjectPhenotypesDS.txt
+GTEX_FILE_MAPPING:           Data/filemapping/GTEx.tsv
+
+# GTEx genotype files
+GTEXVCF_ANNO: /s/project/sra-download/files/dbGaP-11206/phg000830.v1.GTEx_WGS.genotype-calls-vcf.c1/GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Indiv_GATK_HaplotypeCaller.siteOnly.vep.vcf.gz
+GTEXVCF_GT:   /s/project/sra-download/files/dbGaP-11206/phg000830.v1.GTEx_WGS.genotype-calls-vcf.c1/GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Ind_GATK_HaplotypeCaller.vcf.gz
+
+#
+# Recall pipeline
+#
+# fixed values
+N_samples:  ['All']
+FDR_METHOD: ["BY"]
+P_BENCH:    0.0001
+N_bins:     3
+dPsi_bins:  3
+maxRows:    100000
+
+# variable values
+Qs: ["best"]
+inj_deltas: ["uniformDistr"]
+methods: [
+    "PCA-BB-Decoder",
+    "PCA-BB-Decoder-no-weights",
+    "PCA",
+    "BB",
+#    "PEER",
+]
+GTExMethods: ["PCA", "BB", "PCA-BB-Decoder", "PCA-BB-Decoder-no-weights"]
+final_methods: ["PCA-BB-Decoder", "BB", "PCA", "PEER", "PCA-BB-Decoder-no-weights"]
+outlier_types: ["byJunctionGroup"]
+
+#
+EnrichmentTissues: [
+    # main tissue to compare to
+    "Skin_Not_Sun_Exposed_Suprapubic",
+
+    # ordered by sample size
+    "Minor_Salivary_Gland",
+    "Brain_Substantia_nigra",
+    "Brain_Amygdala",
+    "Uterus",
+    "Small_Intestine_Terminal_Ileum",
+    "Vagina",
+    "Brain_Putamen_basal_ganglia",
+    "Prostate",
+    "Brain_Cerebellar_Hemisphere",
+    "Brain_Cortex",
+    "Pituitary",
+    "Spleen",
+    "Liver",
+    "Artery_Coronary",
+    "Colon_Sigmoid",
+    "Esophagus_Gastroesophageal_Junction",
+    "Adrenal_Gland",
+    "Pancreas",
+    "Testis",
+    "Heart_Atrial_Appendage",
+    "Stomach",
+    "Colon_Transverse",
+
+    # remaining all final GTEx tissues
+    "Muscle_Skeletal",
+    "Nerve_Tibial",
+    "Thyroid",
+    "Whole_Blood",
+    "Brain_Spinal_cord_cervical_c_1",
+    "Brain_Anterior_cingulate_cortex_BA24",
+    "Brain_Hypothalamus",
+    "Brain_Hippocampus",
+    "Ovary",
+    "Brain_Frontal_Cortex_BA9",
+    "Brain_Nucleus_accumbens_basal_ganglia",
+    "Brain_Caudate_basal_ganglia",
+    "Cells_EBV_transformed_lymphocytes",
+    "Brain_Cerebellum",
+    "Breast_Mammary_Tissue",
+    "Adipose_Visceral_Omentum",
+    "Artery_Aorta",
+    "Heart_Left_Ventricle",
+    "Esophagus_Muscularis",
+    "Cells_Transformed_fibroblasts",
+    "Esophagus_Mucosa",
+    "Artery_Tibial",
+    "Adipose_Subcutaneous",
+    "Lung",
+    "Skin_Sun_Exposed_Lower_leg",
+]
+heatmap_tissues: [
+  "Skin_Not_Sun_Exposed_Suprapubic",
+  "Heart_Left_Ventricle",
+  "Whole_Blood",
+]
+reference_heatmap: "Skin_Not_Sun_Exposed_Suprapubic"
+
+reference_dataset_injectedDpsiPlot: "Skin_Not_Sun_Exposed_Suprapubic"
+nonWeighted_AE_IMPLEMENTATION: 'PCA-BB-Decoder-no-weights'
+
+

@@ -1,0 +1,130 @@
+\documentclass[12pt,a4paper, fleqn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\author{Ines Scheller}
+\begin{document}
+
+Beta binomial density:
+\begin{align*}
+BetaBin(k | n, \alpha, \beta) &= \binom{n}{k} \cdot \frac{Be(\alpha + k, \beta + n -k)}{Be(\alpha, \beta)} \\
+&= \frac{\Gamma(n+1)}{\Gamma(k+1)\Gamma(n-k+1)} \cdot \frac{\Gamma(\alpha + k)\Gamma(\beta + n - k)}{\Gamma(\alpha + \beta + n)} \cdot \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)}
+\end{align*}
+
+%Parametrization with $\mu$ and $\rho$:
+%\begin{align*}
+%\mu &= \frac{\alpha}{\alpha + \beta} \hspace{3cm} \rho = \frac{1}{1 + \alpha + \beta} \\
+%&\Rightarrow \alpha = \mu \left(\frac{1-\rho}{\rho}\right) \hspace{1cm} \beta = (\mu - 1)\left(\frac{\rho - 1}{\rho}\right) = (\mu - 1) - \left(\frac{1 - \rho}{\rho}\right)
+%\end{align*}
+
+Definition of $\mu, \alpha, \beta$: 
+\begin{align*}
+\mu = \frac{e^y}{1 + e^y} \hspace{2cm} \alpha = \mu \left(\frac{1-\rho}{\rho}\right) \hspace{1cm} \beta = (\mu - 1)\left(\frac{\rho - 1}{\rho}\right) = (\mu - 1) - \left(\frac{1 - \rho}{\rho}\right)
+\end{align*}
+
+Negative log-likelihood:
+\begin{align*}
+nll &= - \log( \Gamma(n+1)) + log(\Gamma(k+1)) + \log(\Gamma(n-k+1)) \\
+	&+ \log(\Gamma(\alpha)) + \log(\Gamma(\beta)) - \log(\Gamma(\alpha+k)) - \log(\Gamma(\beta+n-k)) \\
+&+ \log(\Gamma(\alpha + \beta + n)) - \log(\Gamma(\alpha + \beta)) \\ \ \\
+nll_{\textbf{truncated}} &= \log(\Gamma(\alpha)) + \log(\Gamma(\beta)) - \log(\Gamma(\alpha+k)) - \log(\Gamma(\beta+n-k)) \\
+\end{align*}
+
+NLL with pseudocounts ($k+1$, $n+2$):
+\begin{align*}
+nll_{\textbf{truncated}} &= \log(\Gamma(\alpha)) + \log(\Gamma(\beta)) - \log(\Gamma(\alpha+k+1)) - \log(\Gamma(\beta+n-k+1)) \\
+\end{align*}
+
+NLL for $y \rightarrow \infty$:
+\begin{align*}
+\lim_{y \rightarrow \infty} \mu &= 1 \\
+\lim_{y \rightarrow \infty} \alpha &= \lim_{y \rightarrow \infty} \mu \left(\frac{1-\rho}{\rho}\right) = \frac{1-\rho}{\rho} \\
+\lim_{y \rightarrow \infty} \alpha + k + 1 &= \frac{1 - \rho}{\rho} + k + 1 \\
+\lim_{y \rightarrow \infty} \mu - 1 &= 0 \\
+\lim_{y \rightarrow \infty} \beta &= \lim_{y \rightarrow \infty} (\mu - 1)\left(\frac{\rho - 1}{\rho}\right) = 0 \\	
+\lim_{y \rightarrow \infty} \beta + n - k + 1 &= n - k + 1 \\
+\lim_{y \rightarrow \infty} \log(\Gamma(\alpha)) &= \log(\Gamma(\frac{1-\rho}{\rho})) \\
+\lim_{y \rightarrow \infty} \log(\Gamma(\alpha + k + 1)) &= \log(\Gamma(\frac{1-\rho}{\rho} + k + 1)) \\
+\lim_{y \rightarrow \infty} \log(\Gamma(\beta)) &= \infty (\log(\Gamma(0))): \text{not defined} ) \\
+\lim_{y \rightarrow \infty} \log(\Gamma(\beta + n - k + 1)) &= \log(\Gamma(n - k + 1))\\
+\end{align*}
+
+NLL for $y \rightarrow -\infty$:
+\begin{align*}
+\lim_{y \rightarrow -\infty} \mu &= 0 \\
+\lim_{y \rightarrow -\infty} \alpha &= \lim_{y \rightarrow -\infty} \mu \left(\frac{1-\rho}{\rho}\right) = 0 \\
+\lim_{y \rightarrow -\infty} \alpha + k + 1 &= k + 1 \\	
+\lim_{y \rightarrow -\infty} \mu - 1 &= -1 \\
+\lim_{y \rightarrow -\infty} \beta &= -1 \cdot \frac{\rho - 1}{\rho} = \frac{1-\rho}{\rho} \\
+\lim_{y \rightarrow -\infty} \beta + n - k + 1 &= \frac{1-\rho}{\rho} + n - k + 1 \\
+\lim_{y \rightarrow -\infty} \log(\Gamma(\alpha)) &= \infty (\log(\Gamma(0))): \text{not defined} ) \\
+\lim_{y \rightarrow -\infty} \log(\Gamma(\alpha + k + 1)) &= \log(\Gamma(k + 1)) \\
+\lim_{y \rightarrow -\infty} \log(\Gamma(\beta)) &= \log(\Gamma(\frac{1-\rho}{\rho}))\\
+\lim_{y \rightarrow -\infty} \log(\Gamma(\beta + n - k + 1)) &= \log(\Gamma(\frac{1-\rho}{\rho} + n - k + 1))\\
+\end{align*}
+
+$\log(\Gamma(\alpha))$:\\
+\includegraphics[scale=0.5]{/data/nasif12/home_if12/scheller/plots/lgamma_alpha_01.png} \\
+\newpage
+$\log(\Gamma(\beta))$:\\
+\includegraphics[scale=0.39]{/data/nasif12/home_if12/scheller/plots/lgamma_beta_01.png} \\
+$\Rightarrow \log(\Gamma(\alpha))$ and $\log(\Gamma(\beta))$ approximated as a straight line with slope -1 and 1, for $y \rightarrow -\infty$ and $y \rightarrow \infty$, respectively.\\
+\ \\
+Gradient of d:
+\begin{align*}
+\frac{d}{d W_{d}} nll_{\textbf{truncated}} &= \left[ \psi\left(\mu\left(\frac{1-\rho}{\rho}\right) \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right]^T \cdot XW_e \\
+&+ \left[ \psi\left(\left(\mu - 1\right)\left(\frac{\rho - 1}{\rho}\right) \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right]^T \cdot XW_e \\
+&- \left[ \psi\left(\mu\left(\frac{1-\rho}{\rho}\right)  + k + 1 \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right]^T \cdot XW_e \\
+&- \left[ \psi\left(\left(\mu - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} \right]^T \cdot XW_e \\
+\end{align*}
+Approximation of the gradient:\\
+For $y \rightarrow \infty$:
+\begin{align*}
+\frac{e^{Y}}{\left(1+e^{Y}\right)^2} &\rightarrow 0 \\
+\psi\left(\left(\mu - 1\right)\left(\frac{\rho - 1}{\rho}\right) \right) &\rightarrow -\infty \\
+\psi\left(\left(\mu - 1\right)\left(\frac{\rho - 1}{\rho}\right) \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}  &\rightarrow 1 \\
+\psi\left(\mu\left(\frac{1-\rho}{\rho}\right) \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}  &\rightarrow 0 \\
+\psi\left(\mu\left(\frac{1-\rho}{\rho}\right)  + k + 1 \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}  &\rightarrow 0 \\
+\psi\left(\left(\mu - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}  &\rightarrow 0 \\
+\end{align*}
+For $y \rightarrow -\infty$:
+\begin{align*}
+\frac{e^{Y}}{\left(1+e^{Y}\right)^2} &\rightarrow 0 \\
+\psi\left(\mu \left(\frac{1 - \rho}{\rho}\right) \right) &\rightarrow -\infty \\
+\psi\left(\mu\left(\frac{1-\rho}{\rho}\right) \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}  &\rightarrow -1 \\
+\psi\left(\left(\mu - 1\right)\left(\frac{\rho - 1}{\rho}\right) \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2} &\rightarrow 0 \\
+\psi\left(\mu\left(\frac{1-\rho}{\rho}\right)  + k + 1 \right) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}  &\rightarrow 0 \\
+\psi\left(\left(\mu - 1\right)\left(\frac{\rho - 1}{\rho}\right) + n - k + 1 \right) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}  &\rightarrow 0 \\
+\end{align*}
+
+$\psi(\alpha) \cdot \frac{1-\rho}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}$: \hspace{6cm} $\psi(\beta) \cdot \frac{\rho - 1}{\rho} \cdot \frac{e^{Y}}{\left(1+e^{Y}\right)^2}$:\\
+\includegraphics[scale=0.325]{/data/nasif12/home_if12/scheller/plots/digamma_alpha_full_01.png}
+\includegraphics[scale=0.325]{/data/nasif12/home_if12/scheller/plots/digamma_beta_full_01.png} \\
+
+$\frac{e^{Y}}{\left(1+e^{Y}\right)^2}$:\\
+\includegraphics[scale=0.4]{/data/nasif12/home_if12/scheller/plots/mu_derivative.png}
+\\
+Gradient with approximation compared to finite difference approximation: \\ \ \\
+values in D in [-1, 1] \\
+\includegraphics[scale=0.5]{/data/nasif12/home_if12/scheller/plots/grad_test_smallD.png} 
+\\
+values in D in [-5, 5]: some inaccuracies compared to finite difference approximation because of small jumps in the loss function (probably because of the approximation), but gradient is fine (see plots below, direction of gradient is computed correctly), and the Fraser autoencoder fitting works \\
+\includegraphics[scale=0.5]{/data/nasif12/home_if12/scheller/plots/grad_approx_test.png} \\
+\includegraphics[scale=0.3]{/data/nasif12/home_if12/scheller/plots/loss_jumps1.png}
+\includegraphics[scale=0.3]{/data/nasif12/home_if12/scheller/plots/loss_jumps2.png} 
+\\
+\includegraphics[scale=0.3]{/data/nasif12/home_if12/scheller/plots/loss_d_bumpy.png}
+\includegraphics[scale=0.3]{/data/nasif12/home_if12/scheller/plots/loss_d_instable.png} 
+\\
+\includegraphics[scale=0.3]{/data/nasif12/home_if12/scheller/plots/loss_d_bumpy2.png} 
+\includegraphics[scale=0.3]{/data/nasif12/home_if12/scheller/plots/loss_bumpy_close2.png} 
+\\
+For small rho ($\approx \rho < 10^{-8}$), the loss function is sometimes instable (also for small values in D where no approximation happens), but the gradient is correct (problems with finite difference in these cases):\\
+\includegraphics[scale=0.28]{/data/nasif12/home_if12/scheller/plots/loss_small_rho_instable.png}
+\includegraphics[scale=0.28]{/data/nasif12/home_if12/scheller/plots/loss_small_rho_instable2.png}
+
+\end{document}

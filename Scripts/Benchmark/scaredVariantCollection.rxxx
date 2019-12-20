@@ -1,0 +1,98 @@
+#'---
+#' title: Create SNP benchmarkset for SCARED package
+#' author: Christian Mertes
+#' wb:
+#'   Input: asdf
+#' output:
+#'  html_document
+#'---
+suppressPackageStartupMessages({
+    library(VariantAnnotation)
+    library(data.table)
+    library(BiocParallel)
+    library(ensemblVEP)
+    library(BBmisc)
+})
+
+#'
+#' File and folders
+#'
+PROC_GTEX_DIR <- "/s/project/fraser/benchmark"
+RAW_GTEX_DIR  <- "/s/project/sra-download/files/dbGaP-11206/phg000830.v1.GTEx_WGS.genotype-calls-vcf.c1/"
+VCF_ANNO_FILE <- "GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Indiv_GATK_HaplotypeCaller.siteOnly.HIGH.vep.vcf.gz"
+VCF_GT_FILE   <- "GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_635Ind_PASS_AB02_GQ20_HETX_MISS15_PLINKQC.vcf.gz"
+
+#'
+#' get VCF file
+#'
+vcf <- readVcf(file.path(PROC_GTEX_DIR, VCF_ANNO_FILE))
+dim(vcf)
+
+#'
+#' parse the VEP annotation (CSQ line within VCF file)
+#'
+parsedVcf <- parseCSQToGRanges(vcf)
+parsedVcfDT <- as.data.table(parsedVcf)
+parsedVcfDT[,VAR_ID:=names(parsedVcf)]
+dim(parsedVcfDT)
+
+#'
+#' get only the high confidence and conservative annotated variants
+#'
+high_qual_consev_var <- parsedVcfDT["protein_coding"==BIOTYPE & LoF=="HC" & !is.na(CCDS)]
+dim(high_qual_consev_var)
+DT::datatable(high_qual_consev_var, options=list(scrollX=TRUE))
+
+#'
+#' get genotype (parallelize it to speed it up, 25 min with 30 cores)
+#'
+rangesOfInterest <- makeGRangesFromDataFrame(high_qual_consev_var, ignore.strand=TRUE)
+threads <- 40
+bpparam <- MulticoreParam(threads, threads*5, progressbar=TRUE)
+chunks <- chunk(seq_along(rangesOfInterest), 100)
+vcfgtls <- bplapply(chunks, file=file.path(RAW_GTEX_DIR, VCF_GT_FILE),
+            ranges=rangesOfInterest, BPPARAM=bpparam, function(x, ranges, file){
+    readVcf(TabixFile(file), param=ranges[x])
+})
+vcfgt <- do.call(rbind, vcfgtls)
+vcfgt <- vcfgt[names(vcfgt) %in% high_qual_consev_var[,VAR_ID],]
+dim(vcfgt)
+
+#' get gt table and remove variants with zero alleles
+gttable <- as(genotypeToSnpMatrix(vcfgt)$genotype, "numeric")
+gttable <- gttable[,apply(gttable, 2, sum, na.rm=TRUE)>0]
+nsamples <- dim(gttable)[1]
+dim(gttable)
+
+#'
+#' number of samples per variants
+#'
+numSamplesPerVar <- apply(gttable, 2, function(x) sum(x > 0, na.rm=TRUE))
+hist(numSamplesPerVar, xlab="number of samples per variant", breaks=nsamples)
+table(numSamplesPerVar)[1:50]
+
+#'
+#' number of alleles per variant
+#'
+numAllelesPerVar <- apply(gttable, 2, function(x) sum(x, na.rm=TRUE))
+hist(numAllelesPerVar, xlab="number of alleles per variant", breaks=nsamples)
+table(numAllelesPerVar)[1:50]
+
+#'
+#' rare events sample counts per
+#' heterozygous vs homozygous
+#'
+tab2dt <- function(x) {
+    tabx <- table(x)
+    names <- names(tabx)
+    dt <- as.data.table(matrix(as.integer(tabx),nrow=1))
+    colnames(dt) <- names
+    return(dt)
+}
+gtsumtable <- apply(gttable, 2, tab2dt)
+gtsumtabledt <- rbindlist(gtsumtable, fill=TRUE)
+gtsumtabledt[is.na(gtsumtabledt)] <- 0
+message("samples per variant count heterozygous vs homozygous")
+table(gtsumtabledt[,2:3,with=FALSE])[1:10,1:10]
+
+
