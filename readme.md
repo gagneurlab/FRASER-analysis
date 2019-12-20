@@ -69,11 +69,11 @@ Rscript ./src/r/install_dependencies.R
 To run the full pipeline, execute the following command with 10 jobs and maximum 40 cores in parallel:
 
 ```
-# init dataset to be used
+# init datasets to be used
 snakemake -j 25 --cores 25 defineDatasets
 
 # run full analysis on datasets
-snakemake -j 10 --cores 40
+snakemake -j 10 --cores 40 Output/paper_figures/supplement_final.pdf
 ```
 
 or to run it on the cluster with SLUM installed: 
