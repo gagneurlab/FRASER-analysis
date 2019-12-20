@@ -1,8 +1,10 @@
 # FRASER-analysis
 
-This is the accompanying analysis repository of the paper: `Detection of aberrant splicing events in RNA-seq data with FRASER`.
+This is the accompanying analysis repository of the paper:
 
-The paper can be found [here](https://www.biorxiv.org/content/10.1101/2019.12.18.866830v1).
+`Detection of aberrant splicing events in RNA-seq data with FRASER`. 
+
+The paper can be found [on bioRxiv](https://www.biorxiv.org/content/10.1101/2019.12.18.866830v1).
 
 This repository contains the full pipeline and code to reproduce the results published in the paper using [snakemake](https://snakemake.readthedocs.io/en/stable/) and [wBuild](https://github.com/gagneurlab/wBuild). 
 
@@ -18,9 +20,10 @@ This project is setup as a [wBuild workflow](https://github.com/gagneurlab/wBuil
     * `Output/html` contains the final HTML report
     * `Output/paper_figures` has all paper figures
 
-## Dependencies
+## Data and prerequisites 
 
-This project depends on the python package `wBuild` and the R package `FRASER`.
+This project depends on the python package `wBuild` and the R package `FRASER`. Further, we use the [Leafcutter](https://github.com/davidaknowles/leafcutter) adaptation used in the [Kremer et al paper](https://www-nature-com.eaccess.ub.tum.de/articles/ncomms15824), which can be found [here](https://i12g-gagneurweb.in.tum.de/gitlab/mertes/rare-disease-leafcutter).
+
 The pipeline starts with the raw aligned GTEx samples V7P and their genotype calls, which can be downloaded from [dbGaP](https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs000424.v7.p2). Since the data are not publicly shareable one has to apply for the data at [dbGaP]( https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs000424.v6.p1). 
 
 ## Repository setup
@@ -29,9 +32,11 @@ First download the repo and its dependencies:
 
 ```
 # R package used throughout the workflow
-git clone https://github.com/gagneurlab/FRASER FRASER
+git clone https://github.com/gagneurlab/FRASER
+git clone https://i12g-gagneurweb.in.tum.de/gitlab/mertes/rare-disease-leafcutter
+
 # analysis code
-git clone https://github.com/gagneurlab/FRASER-analysis FRASER-analysis
+git clone https://github.com/gagneurlab/FRASER-analysis
 cd FRASER-analysis
 ```
 
