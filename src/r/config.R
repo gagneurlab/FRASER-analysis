@@ -1,13 +1,20 @@
 #'
 #' MAIN R CONFIGURATION FOR FRASER PIPELINE
 #'
-library(reticulate)
-if(file.exists("/home/mertes/miniconda3/bin/python")){
-    use_python("/home/mertes/miniconda3/bin/python", required=TRUE)
-    Sys.setenv(PATH=paste0("/home/mertes/miniconda3/bin:", Sys.getenv("PATH")))
-} else {
-    use_python("/opt/modules/i12g/anaconda/3-5.0.1/envs/omicsOUTRIDER/bin/python", required=TRUE)
-    Sys.setenv(PATH=paste0("/opt/modules/i12g/anaconda/3-5.0.1/bin:", Sys.getenv("PATH")))
+load_wbuild <- function(){
+    library(reticulate)
+    if(file.exists("/opt/modules/i12g/anaconda/envs/fraser-analysis/bin/python")){
+        use_condaenv(
+                condaenv = "/opt/modules/i12g/anaconda/envs/fraser-analysis/", 
+                conda="/opt/modules/i12g/anaconda/3-2019.10/condabin/conda")
+    } else if(file.exists("/home/mertes/miniconda3/bin/python")){
+        use_python("/home/mertes/miniconda3/bin/python", required=TRUE)
+        Sys.setenv(PATH=paste0("/home/mertes/miniconda3/bin:", Sys.getenv("PATH")))
+    }
+    py_config()
+    if(system('which snakemake') != 0){
+        warning("Could not load snakemake/conda environment.")
+    }
 }
 
 print_comment <- function(...){
@@ -100,6 +107,14 @@ getSnakemakeTmp <- function(){
     }
     invisible(TRUE)
 }
+
+if(dir.exists("Data/paperPipeline/datasets/savedObjects")){
+    if(!rhdf5::h5testFileLocking("Data/paperPipeline/datasets/savedObjects/test.locking.h5")){
+        warning("Disabling HDF5 file locking, because it is not supported on this system!")
+        rhdf5::h5disableFileLocking()
+    }
+}
+
 
 print_comment("Finished with loading the .Rprofile.\n#\n# Now you can start curing diseases! :)")
 

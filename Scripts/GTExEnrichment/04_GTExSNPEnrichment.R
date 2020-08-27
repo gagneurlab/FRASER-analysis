@@ -1,18 +1,17 @@
 #'---
-#' title: GTEx Rare MMSplice variant enrichtment
+#' title: GTEx Rare variant enrichtment
 #' author: Christian Mertes
 #' wb:
 #'   threads: 9
 #'   input:
-#'     - variantTable:  "/s/project/gtex-processed/mmsplice-scripts/data/processed/mmsplice_rare_variants.csv"
-#'     - leafcutter:    '`sm config["DATADIR"] + "/processedData/leafcutter/{dataset}/results_{dataset}.tsv"`'
-#'     - annotations:   '`sm config["DATADIR"] + "/annotations/{dataset}.tsv"`'
-#'     - datasets_all:  '`sm expand(config["DATADIR"] + "/datasets/savedObjects/{{dataset}}__{method}/pajdBetaBinomial_psiSite.h5", method=config["GTExMethods"])`'
-#'     - results_all:   '`sm expand(config["DATADIR"] + "/processedData/results/{{dataset}}/{method}_results.tsv", method=config["GTExMethods"])`'
+#'     - variantTable:    '`sm config["DATADIR"] + "/GTEx_variant_enrichment/{snptype}_filtered_VariantsTable.tsv.gz"`'
+#'     - multiTOC:        '`sm config["DATADIR"] + "/GTEx_variant_enrichment/{snptype}__{deltaPsi}_reproducability.RDS"`'
+#'     - results_all:     '`sm config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}__outlierStatus__{deltaPsi}.tsv.gz"`'
+#'     - resultsByMethod: '`sm [ config["DATADIR"] + "/processedData/leafcutter/{dataset}/results_{dataset}.tsv", config["DATADIR"] + "/processedData/leafcutter/{dataset}/leafcutterMD_testing/results_{dataset}.tsv", config["DATADIR"] + "/processedData/spot/{dataset}/spot__fullResults.tsv", expand(config["DATADIR"] + "/processedData/results/{{dataset}}/{method}_results.tsv", method=config["GTExMethods"]) ]`'
 #'   output:
-#'     - rds:        '`sm config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}__rareMMSplice.RDS"`'
-#'     - ggplotFile: '`sm config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}__rareMMSplice_ggplot.RDS"`'
-#'     - wBhtml:     '`sm config["htmlOutputPath"] + "/GTEx_variant_enrichment/mmsplice/{dataset}__rareMMSplice.html"`'
+#'     - rds:             '`sm config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}__{snptype}__{deltaPsi}.RDS"`'
+#'     - ggplotFile:      '`sm config["DATADIR"] + "/GTEx_variant_enrichment/{dataset}__{snptype}__{deltaPsi}_ggplot.RDS"`'
+#'     - wBhtml:   '`sm config["htmlOutputPath"] + "/GTEx_variant_enrichment/{dataset}__{snptype}__{deltaPsi}.html"`'
 #'   type: noindex
 #' output:
 #'   html_document:
@@ -22,97 +21,74 @@
 
 # source config
 source("./src/r/config.R")
-load_all("../rare-disease-leafcutter/")
 
 # Interactive mode (debuging)
 if(FALSE){
+    load_wbuild()
     source(".wBuild/wBuildParser2.R")
-    wildcards <- list(dataset="Brain_Amygdala")
-    options   <- c("--configfile", "wbuild.yaml", "--config", 
-            'methods=\'["PCA-BB-Decoder","PCA","BB"]\'')
-    parseWBHeader2("Scripts/GTExEnrichment/GTExMMSpliceSNPEnrichment.R",
+    wildcards <- list(snptype="rareSplicing", dataset="Uterus", deltaPsi="0.1")
+    options   <- c("--configfile", "wbuild.yaml")
+    
+    wildcards <- list(snptype="rareSplicing", dataset="Adrenal_Gland", deltaPsi="0.0")
+    options   <- c("--configfile", "wbuild_small.yaml")
+    
+    parseWBHeader2("Scripts/GTExEnrichment/04_GTExSNPEnrichment.R",
             wildcards=wildcards, options=options, rerun=TRUE)
 }
 
-# stop(paste0(date(), ": Stop this and dont run it ..."))
-PRODUCTION <- FALSE
-useRANDOM <- FALSE
 curAEVersion <- snakemake@config$AE_IMPLEMENTATION
 
 tissue     <- snakemake@wildcards$dataset
-snptype    <- "rareMMSplice"
+snptype    <- snakemake@wildcards$snptype
+deltaPsi   <- as.numeric(snakemake@wildcards$deltaPsi)
 vcfFile    <- snakemake@input$variantTable
-rlc_files  <- snakemake@input$leafcutter
-fds_files  <- snakemake@input$datasets_all
-res_files  <- snakemake@input$results_all
+multiTOCFile <- snakemake@input$multiTOC
+res_all_files  <- snakemake@input$results_all
+res_by_method_files <- snakemake@input$resultsByMethod
 anno_files <- snakemake@input$annotations
 threads    <- snakemake@threads
 
 outRDS     <- snakemake@output$rds
 ggplotFile <- snakemake@output$ggplotFile
 
-MIN_COVERAGE  <- 10
+MIN_DELTA_PSI <- deltaPsi
 MAF_LIMIT     <- 0.05
-MIN_DELTA_PSI <- 0.1
+MULTI_TISSUE_CUTOFF <- c(2, 10)
 BPPARAM       <- MulticoreParam(min(4, threads))
 register(BPPARAM)
 
 vcfFile
-rlc_files
-res_files
+multiTOCFile
+res_all_files
+res_by_method_files
+outRDS
 
 ###########################################
 #'
-#' # VCF parsing
+#' # Load VCF file
 #'
 ###########################################
 
 #' Read in vcf file
 #+ read vcf
 variants <- fread(vcfFile)
+tibble(variants)
 
-# cleanup table
-variants <- variants[,.(variantID=ID, subjectID=sample, MAF=maf,
-        delta_logit_psi, Gene=gene_id, SYMBOL=gene_name,
-        simple_conseq="MMSplice", IMPACT="MMSplicing")]
-
-hist(variants[,.(MAF=max(MAF)), by=c('subjectID', 'variantID')][,log10(MAF)],
-     breaks=30, main='MAF distribution over all variants of interest',
-     xlab='log10(MAF)')
-abline(v=log10(MAF_LIMIT), col='red')
-
-#' MAF filter
-variants <- variants[MAF<MAF_LIMIT]
-
-
-#' Number of variants per sample
-hist(variants[,.N,by=c('variantID', 'subjectID')][,.N,by=subjectID][,N],
-     main='Number of variants per sample', xlab='Number of variants')
-
-
-#' Keep only the gene level and most severe variant annotation
-#' (remove transcript level)
-variants <- variants[order(subjectID, Gene, -abs(delta_logit_psi))]
-dupVars <- duplicated(variants[,.(subjectID, Gene)])
-table(dupVars)
-variants <- variants[!dupVars]
-
+###########################################
 #'
-#' # Final var overview
+#' # Read in multi tissue outlier calls
 #'
+###########################################
 
-#' * Final number of variants per sample
-hist(variants[,.N,by=c('variantID', 'subjectID')][,.N,by=subjectID][,N])
-
-#' Number of variants sample combinations
-nrow(variants[,.N,by=c('variantID', 'subjectID')])
-
-#' * Number of affected samples:
-length(unique(variants$subjectID))
-
-#' * Number of affected genes:
-length(unique(variants$SYMBOL))
-length(unique(variants$Gene))
+dt_mtoc <- readRDS(multiTOCFile)$datatable$dt2p
+dt_mtoc_wide <- pivot_wider(
+    dt_mtoc[,.(subjectID, geneID, Method, numMultiCall=hits3)],
+    names_from="Method",
+    names_glue="{Method}_{.value}",
+    values_from=numMultiCall,
+    values_fill=FALSE) %>%
+    as.data.table()
+tibble(dt_mtoc_wide)
 
 ###########################################
 #'
@@ -120,73 +96,59 @@ length(unique(variants$Gene))
 #'
 ###########################################
 
+res_all <- fread(res_all_files)
+tibble(res_all)
+methodZ <- grep('_z$', names(res_all), value=TRUE)
+methodP <- grep('_n?p$', names(res_all), value=TRUE)
+
+total_test <- sapply(methodP, function(x) sum(!is.na(res_all[,get(x)])))
+sort(total_test)
+
+###########################################
 #'
-#' ## Read Leafcutter calls
-#+ leafcutter readin
-names(rlc_files) <- basename(dirname(rlc_files))
-enrich_rlc <- lapply(names(rlc_files), function(x){
-    rlds <- readRDS(file.path(dirname(rlc_files[[x]]), "rlds_obj.RDS"))
-    clusterGeneMap <- clusterGeneMapping(rlds)
-    ans1 <- collectResults(rlds, clusterGeneMap=clusterGeneMap,
-            plot=FALSE, FDR_CUTOFF=2, BPPARAM=BPPARAM, save=FALSE)
-
-    ans <- ans1[,.(subjectID=sampleIDs, geneID=genes, p=gene_p)][,
-        .(p=min(p, na.rm=TRUE), tissue=x), by="subjectID,geneID"][
-        order(p)]
-    names(ans) <-  c('subjectID', 'geneID', "Leafcutter_p", "tissue")
-    ans[,-"tissue"]
-})
-names(enrich_rlc) <- names(rlc_files)
-
-
+#' # Set unified factors across tables
 #'
-#' ## Read all FraseR objects
-#+ fds readin
-loadFds_obj <- FALSE
-ncpus <- 1
-enrich_fds_obj <- mclapply(fds_files, load_fraser_enrichment_data, 
-        mc.cores=threads, internCPUs=ncpus, minCoverage=MIN_COVERAGE,
-        minDeltaPsi=MIN_DELTA_PSI, debug=loadFds_obj)
-enrich_fds <- lapply(enrich_fds_obj, "[[", "enrich_obj")
-fds_ls     <- lapply(enrich_fds_obj, "[[", "fds")
-res_ls     <- lapply(enrich_fds_obj, "[[", "res")
-names(enrich_fds) <- basename(dirname(fds_files))
-names(fds_ls) <- basename(dirname(fds_files))
-names(res_ls) <- basename(dirname(fds_files))
+###########################################
 
+usamples <- unique(c(res_all$subjectID, levels(dt_mtoc_wide$subjectID)))
+ugenes   <- unique(c(res_all$geneID, levels(dt_mtoc_wide$geneID)))
+res_all[ ,subjectID :=factor(subjectID, levels=usamples)]
+res_all[ ,geneID    :=factor(geneID,    levels=ugenes)]
+dt_mtoc_wide[ ,subjectID :=factor(as.character(subjectID, levels=usamples))]
+dt_mtoc_wide[ ,geneID    :=factor(as.character(geneID,    levels=ugenes))]
+variants[,subjectID :=factor(as.character(subjectID, levels=usamples))]
+variants[,geneID    :=factor(as.character(SYMBOL,    levels=ugenes))]
+variants[,IMPACT    :=factor(IMPACT, levels=c("HIGH", "MODERATE", "LOW"))]
+
+###########################################
+#'
+#' # Merge variants with outlier calls
+#'
+###########################################
 
 #'
-#' ## Read annotations
-#+ anno readin
-anno <- fread(anno_files)
-enrich_fds <- lapply(enrich_fds, anno=anno, function(x, anno){
-    setnames(x, "subjectID", "run")
-    x <- merge(x, anno[,.(run=sampleID, indivID)], by="run")
-    setnames(x, "indivID", "subjectID")
-    x[,run:=NULL]
-    x
-})
-
-
-#'
-#' ## Get tested genes (both FraseR + Leafcutter)
-# tested genes
-testedGenes <- intersect(
-        enrich_fds[[1]][,geneID],
-        enrich_rlc[[1]][,geneID])
+#' ## Get tested genes for all methods (FRASER, SPOT, LEAFCUTTER)
+#' 
+overlapGenesTested <- !rowAnyNAs(as.matrix(res_all[,c(methodZ, methodP), with=FALSE]))
+res_all <- res_all[overlapGenesTested]
+length(unique(res_all[,subjectID]))
+length(unique(res_all[,geneID]))
 
 #'
 #' # Merge data sets into one table
 #+ merge data
-tissueData <- CJ(subjectID=anno$indivID, geneID=testedGenes)
-var2merge <- unique(variants[, .(subjectID, geneID=SYMBOL, simple_conseq, MAF, IMPACT)])
-var2merge <- var2merge[!duplicated(paste(subjectID, geneID))]
+var2merge <- unique(variants[, .(subjectID, geneID, simple_conseq, MAF, IMPACT)])
+setkey(var2merge, subjectID, geneID, IMPACT)
+var2merge <- var2merge[!duplicated(var2merge, by=c("subjectID", "geneID"))]
 
-features2merge <- c(list(tested=tissueData, vars=var2merge), enrich_fds, enrich_rlc)
-featuresSubset <- Reduce(x=features2merge, function(x, y){
-        merge(x, y, by=c('subjectID', 'geneID'), all.x=TRUE) })
-methodZ <- grep('_z$', names(featuresSubset), value=TRUE)
-methodP <- grep('_n?p$', names(featuresSubset), value=TRUE)
+featuresSubset <- merge(merge(
+    res_all, var2merge, all.x=TRUE, by=c("subjectID", "geneID")),
+        dt_mtoc_wide, by=c("subjectID", "geneID"), all.x=TRUE)
+featuresSubset[, back_simple_conseq:=simple_conseq]
+
+featuresSubset[, table(is.na(IMPACT))]
+featuresSubset[, table(is.na(tissue))]
+featuresSubset[, table(is.na(tissue) | is.na(IMPACT))]
 
 
 #'
@@ -203,7 +165,7 @@ featuresSubset[, sum(!is.na(simple_conseq))/.N]*100
 #' # Overview of enrichment
 #+ Zscore overview per variant type
 #+ zscore distribution, fig.width=14
-dt <- melt(featuresSubset, measure.vars=methodP, variable.name='Method', value.name='Zscore')
+dt <- melt(featuresSubset, measure.vars=methodZ, variable.name='Method', value.name='Zscore')
 ggplots[['ZscorePerVarType']] <- ggplot(dt[abs(Zscore) > 2], aes(simple_conseq, Zscore, col=Method)) +
     stat_summary(fun.data=function(x, ...){c(y=dt[,min(Zscore, na.rm=TRUE)*1.2], label=length(x))},
                  position=position_dodge(width=.85), angle=90, geom="text") +
@@ -213,15 +175,6 @@ ggplots[['ZscorePerVarType']] <- ggplot(dt[abs(Zscore) > 2], aes(simple_conseq, 
     theme(axis.text.x = element_text(angle=45, hjust=1))
 ggplots[['ZscorePerVarType']]
 
-#'
-#' #Add random samples
-if(isTRUE(useRANDOM)){
-    featuresSubset[,'RAND_p':=runif(.N, 0, 1)]
-    featuresSubset[,'RAND_z':=rnorm(.N, 0, 5)]
-    methodP <- unique(c(methodP, "RAND_p"))
-    methodZ <- unique(c(methodZ, "RAND_z"))
-}
-featuresSubset[, back_simple_conseq:=simple_conseq]
 
 
 #'
@@ -239,18 +192,32 @@ enrich_table <- list(
 enrich_final_ls <- list()
 for(et in enrich_table){
     enrichdt <- rbindlist(lapply(et$methods, function(x){
-        dt <- calculateEnrichment(featuresSubset, cols=x, cutOff=et$cutOff,
+        dt1 <- calculateEnrichment(featuresSubset, cols=x, cutOff=et$cutOff,
                 isZscore=et$isZscore)
-        dt$dt[,.(cutoff, nRareEvent, total, fraction, nNA, Method=x,
-                 enrichment=dt$enrichment, min.ci=dt$min.ci, max.ci=dt$max.ci)]
+        ans <- dt1$dt[, .(cutoff, nRareEvent, total, fraction, nNA, Method=x,
+                enrichment=dt1$enrichment, min.ci=dt1$min.ci, max.ci=dt1$max.ci,
+                multiCall=1)]
+        
+        if(paste0(x, "_numMultiCall") %in% colnames(featuresSubset)){
+            for(i in MULTI_TISSUE_CUTOFF){
+                dtmc <- calculateEnrichment(featuresSubset, 
+                        cols=x, cutOff=et$cutOff,
+                        isZscore=et$isZscore, multiCall=i)
+                ans <- rbind(ans, dtmc$dt[,.(
+                        cutoff, nRareEvent, total, fraction, nNA, Method=x, 
+                        enrichment=dtmc$enrichment, min.ci=dtmc$min.ci, 
+                        max.ci=dtmc$max.ci, multiCall=i)])
+            }
+        }
+        ans
     }))
     enrich_final_ls[[paste0(tissue, ": ", et$name)]] <- enrichdt
 
     ggplots[[paste0('enrichAll_', et$name)]] <-
         ggplot(enrichdt[cutoff==TRUE], aes(Method, enrichment)) +
             geom_point() +
+            facet_grid(rows="multiCall", scales="free_y") + 
             geom_errorbar(aes(ymin=min.ci, ymax=max.ci), width=.2) +
-#            xlim(c(0, NA_real_)) + 
             coord_flip() +
             labs(title=paste0('Enrichment (All, ', tissue, ', ', et$name, ')'))
 }
@@ -301,18 +268,29 @@ ggplots[['scatterAE_PCA']] <- ggplot(featuresSubset,
     grids(color="white") +
     coord_fixed()
 
-ggplots[['scatterAE_Leafcutter']] <- ggplot(featuresSubset,
-            aes(x=-log10(Leafcutter_p), y=-log10(get(paste0(curAEVersion, '_p'))))) +
+ggplots[['scatterAE_LeafcutterMD']] <- ggplot(featuresSubset,
+            aes(x=-log10(LeafcutterMD_p), y=-log10(get(paste0(curAEVersion, '_p'))))) +
     geom_hex(bins=50) +
     geom_abline(intercept = 0, slope = 1, col='red') +
     scale_fill_gradient(trans = "log") +
     ylab(paste0("-log10(", curAEVersion, ")")) +
-    ggtitle('Scatter FraseR versus Leafcutter genewise P-values') +
+    ggtitle('Scatter FraseR versus LeafcutterMD genewise P-values') +
+    grids(color="white") +
+    coord_fixed()
+
+ggplots[['scatterAE_SPOT']] <- ggplot(featuresSubset,
+            aes(x=-log10(SPOT_p), y=-log10(get(paste0(curAEVersion, '_p'))))) +
+    geom_hex(bins=50) +
+    geom_abline(intercept = 0, slope = 1, col='red') +
+    scale_fill_gradient(trans = "log") +
+    ylab(paste0("-log10(", curAEVersion, ")")) +
+    ggtitle('Scatter FraseR versus SPOT genewise P-values') +
     grids(color="white") +
     coord_fixed()
 
 ggplots[['scatterAE_PCA']]
-ggplots[['scatterAE_Leafcutter']]
+ggplots[['scatterAE_LeafcutterMD']]
+ggplots[['scatterAE_SPOT']]
 
 
 #'
@@ -324,13 +302,13 @@ methods2plot <- union(methodP, methodZ)
 rrdt <- rbindlist(bplapply(methods2plot, dt=featuresSubset, BPPARAM=BPPARAM,
         function(x, dt){
             totalHits <- sum(!is.na(dt[,simple_conseq]))
-            dt <- calculateRecallRank(dt, x, grepl('_p$', x))
+            dt <- calculateRecallRank(dt, x, grepl('_n?p$', x))
             dt <- data.table(Method=x, dt[,.(
                     nTrueHits=get(paste0(x, "_recall")),
                     recall=get(paste0(x, "_recall"))/totalHits,
                     rank=get(paste0(x, '_rank')))])
-            dt[,Type:=ifelse(grepl('_z$', Method), 'Z-score', 
-                    ifelse(grepl('_p$', Method), 'P-value', 'Normal P-value'))]
+            dt[,Type:=ifelse(grepl('_p$', Method), 'P-value', 
+                    ifelse(grepl('_np$', Method), 'P-value norm', 'Z-score'))]
             dt[,Method:=gsub('_n?[pz]$', '', Method)]
         }))
 rrdt
@@ -339,13 +317,13 @@ rrdt
 #' Merge with cutoffs from enrichment
 #'
 dt_tmp <- rbindlist(lapply(names(enrich_final_ls[1:5]), function(x){
-    Type <- ifelse(grepl("Zscore", x), "Z-score", "P-value")
     Cutoff <- strsplit(x, " ")[[1]][3]
     enrich_final_ls[[x]][cutoff == TRUE, .(
-        rank=total,
-        Method=gsub("_n?[pz]", "", Method),
-        Type=Type,
-        Cutoff=Cutoff)]
+            rank=total,
+            Method=gsub("_n?[pz]", "", Method),
+            Type=ifelse(grepl('_p$', Method), 'P-value', 
+                    ifelse(grepl('_np$', Method), 'P-value norm', 'Z-score')),
+            Cutoff=Cutoff)]
 }))
 dt4cutoffs <- merge(dt_tmp, rrdt)[order(Method, Type)]
 
@@ -388,9 +366,9 @@ ggplots[["recall_all"]]
 
 
 #+ Save results
-saveRDS(file=outRDS, object=list(
-        enrich_fds=enrich_fds, enrich_rlc=enrich_rlc, variants=variants,
-        featuresSubset=featuresSubset, enrich_final_ls=enrich_final_ls,
+saveRDS(file=outRDS, object=list(variants=variants, 
+        featuresSubset=featuresSubset,
+        enrich_final_ls=enrich_final_ls,
         recallData=rbind(rrdt, dt4cutoffs, fill=TRUE)))
 saveRDS(ggplots, ggplotFile)
 

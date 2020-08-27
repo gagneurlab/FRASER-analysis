@@ -27,7 +27,7 @@
 \begin{document}
 
 
-\section{Supplemental Figures}
+\section{Supplementary Figures}
 
 %% Figure S1
 \begin{figure}[h]
@@ -35,15 +35,16 @@
     \includegraphics[width=\textwidth]{FigureS1_filtering.png}
     \caption{
         \textbf{Filtering of introns.}
-        \textbf{(A)} Histogram of the raw intron coverage per sample-intron pair
+        \textbf{(a)} Histogram of the raw intron coverage per sample-intron pair
 for the Kremer data set grouped according to the intron filter status. Green
 indicates that the intron passed the filter and orange indicates that the
-intron was filtered out. \textbf{(B-D)} Same as A, but for different tissues
-in the GTEx data set. \textbf{(E)} Barplots of the number of introns passed
+intron was filtered out. \textbf{(b-d)} Same as (a), but for different tissues
+in the GTEx data set. \textbf{(e)} Barplots of the number of introns passed
 the filtering, splice sites passed the filtering, observed introns, and
 samples per tissue within the GTEx data set used in this study.}
 \end{figure}
 \pagebreak
+
 
 %% Figure S2
 \begin{figure}[h]
@@ -51,16 +52,17 @@ samples per tissue within the GTEx data set used in this study.}
  	\includegraphics[width=\textwidth]{FigureS2_heatmap_psi3.png}
  	\caption{
  	    \textbf{Tissue-specific correlation structure for $\psi_3$.}
- 	    \textbf{(A-C)} Intron-centered and logit-transformed $\psi_3$ of the 
+ 	    \textbf{(a-c)} Intron-centered and logit-transformed $\psi_3$ of the 
 10,000 most variable introns clustered by samples (columns and rows)
-for three representative GTEx tissues: suprapubic skin (A), 
-left ventricle heart (B), and whole blood (C). Red and blue depict high and 
+for three representative GTEx tissues: (a) suprapubic skin, (b)
+left ventricle heart, (c) and whole blood. Red and blue depict relative high and 
 low intron usage, respectively. Colored horizontal tracks display sequencing
 center, batch, RNA integrity number (RIN), gender, age, and cause of death 
-(DTHHRDY, Hardy scale classification) of the samples. \textbf{(D)} Boxplot of a
-bsolute values of between-sample correlations of row-centered logit-transformed
+(DTHHRDY, Hardy scale classification) of the samples. \textbf{(d)} Boxplot of
+absolute values of between-sample correlations of row-centered logit-transformed
 $\psi_3$ for 48 GTEx tissues before (orange) and after (green) correction 
-for the latent space.
+for the latent space. The intron-centered $\psi_3$ values were clipped to the 
+$[0.01, 0.99]$ interval before logit-transformation.
 }
 \end{figure}
 \pagebreak
@@ -71,75 +73,141 @@ for the latent space.
 	\includegraphics[width=\textwidth]{FigureS2_heatmap_psiSite.png}
 	\caption{
 	    \textbf{Tissue-specific correlation structure for $\theta$.}
-	    \textbf{(A-C)} Splice-site-centered and logit-transformed $\theta$
+	    \textbf{(a-c)} Splice-site-centered and logit-transformed $\theta$
 of the 10,000 most variable splice sites clustered by samples (columns and rows)
-for three representative GTEx tissues: suprapubic skin (A), 
-left ventricle heart (B), and whole blood (C). Red and blue depict high and 
+for three representative GTEx tissues: (a) suprapubic skin, (b)
+left ventricle heart, and (c) whole blood. Red and blue relative depict high and 
 low intron usage, respectively. Colored horizontal tracks display sequencing
 center, batch, RNA integrity number (RIN), gender, age, and cause of death 
-(DTHHRDY, Hardy scale classification) of the samples. \textbf{(D)} Boxplot of a
-bsolute values of between-sample correlations of row-centered logit-transformed
+(DTHHRDY, Hardy scale classification) of the samples. \textbf{(d)} Boxplot of 
+absolute values of between-sample correlations of row-centered logit-transformed
 $\theta$ for 48 GTEx tissues before (orange) and after (green) correction 
-for the latent space.
+for the latent space. The splice-site-centered $\theta$ values were 
+clipped to the $[0.01, 0.99]$ interval before logit-transformation.
 }
 \end{figure}
 \pagebreak
 
+
 %% Figure S4
 \begin{figure}[h]
+\centering
+	\includegraphics[width=\textwidth]{FigureS15_correlations_minN.png}
+	\caption{
+	    \textbf{Effect of total expression on sample correlation structure.}
+Boxplots of absolute values of pairwise between-sample correlations of 
+intron-centered logit-transformed splicing metrics (rows) for three representative GTEx tissues (columns)
+before (orange) and after (green) correction for the latent space. The x-axis 
+indicates the minimal total coverage (N) for an intron in both samples to be 
+considered in the calculation of the pairwise sample correlation. The 
+splicing metrics were clipped to the $[0.01, 0.99]$ interval before 
+logit-transformation.
+}
+\end{figure}
+\pagebreak
+
+
+%% Figure S5
+\begin{figure}[h]
 	\centering
-	\includegraphics[width=\textwidth]{FigureS4_finding_q.png}
+	\includegraphics[width=\textwidth]{FigureS4_finding_q_new.png}
 	\caption{
 	    \textbf{Finding the optimal latent space dimension $q$.}
-	    \textbf{(A)} The area under the precision recall curve is plotted 
-for a given latent space dimension $q$. The dashed line is the optimal $q$
-for the given data set. The blue line is a local polynomial regression fit.
-The data is facet by the splicing metric (rows) and the three example datasets
-from GTEx (columns). \textbf{(B)} For each of the 48 GTEx tissues, 
+	    \textbf{(a)} Area under the precision-recall curve  for recalling
+artificially injected outliers (y-axis) against latent space dimension 
+$q$ (x-axis) stratified by splicing metrics (rows) and three representative 
+GTEx datasets (columns). Simulated outliers are generated using different 
+scenarios: By shifting the splicing metrics away from its observed value 
+(plain) or from its average across samples (dashed) and with shift of various 
+amplitudes: 0.2 (green), 0.3 (orange), 0.5 (purple) or 0.7 (pink) as well as with 
+amplitudes drawn uniformly in $[0.2,1]$ (black). For each scenario, 
+the optimal latent space dimension $q$ is marked with a thicker dot.
+\textbf{(b)} For each of the 48 GTEx tissues, 
 the number of samples are plotted against the estimated latent
 space dimension. The data is stratified by the splicing metrics (columns). 
-The blue line represents a linar regression fit and the gray band around it
+The blue line represents a linear regression fit and the gray band around it
 defines the 95\% confidence interval of the fit.
 }
 \end{figure}
 \pagebreak
 
-%% Figure S5 qq plots
+
+%% Figure S6
+% \begin{figure}[h]
+% \centering
+% 	\includegraphics[width=\textwidth]{FigureS16_qEst_outlier_distr_psi5.png}
+% 	\caption{
+% 	    \textbf{Finding the optimal latent space dimension $q$ under different outlier injection procedures.}
+% The area under the precision recall curve is plotted for a given latent space 
+% dimension $q$. The plot is facetted by the GTEx tissue (columns) and the 
+% distribution used to inject outliers (rows). The point size indicates whether the 
+% tested dimesnion $q$ was found to be the optimal one. The linetype denotes whether 
+% outlier counts were generated by shifting the observed sample $\psi_5$ or by shifting 
+% the counts based on the mean $\psi_5$ of the intron. Colors indicate the minimal 
+% $\Delta\psi_5$ by which outliers were introduced. 
+% }
+% \end{figure}
+% \pagebreak
+
+
+%% Figure S6 qq plots
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{FigureS5_qq_plots.png}
 	\caption{
 	    \textbf{Quantile-quantile plots and the corresponding count ratios.}
-	    \textbf{(A-L)} Quantile-quantile plots of randomly chosen introns based
-on the $\psi_5$ metric. \textbf{(M-X)} Expression plots of the number of split
-reads (K) over the total coverage (N) of the given donor site. The q-q plots 
-correspond to the respective expression plot. The data is based on the 
+	    \textbf{(a-l)} Quantile-quantile plots of randomly chosen introns based
+on the $\psi_5$ metric. \textbf{(m-x)} Expression plots of the number of split
+reads (K) over the total coverage (N) of the given donor site. The q-q plots (a-l)
+correspond to the respective expression plot (m-x). The data is based on the 
 suprapubic skin GTEx tissue.
 }
 \end{figure}
 \pagebreak
 
-%% Figure S6
+%% Figure S7
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{FigureS6_outlier_numbers.png}
 	\caption{
 	    \textbf{Distribution of extreme beta-binomial \textit{P} values across GTEx tissues.}
-	    \textbf{(A)} The distribution of the number of events (y-axis) having a more 
+	    \textbf{(a)} The distribution of the number of events (y-axis) having a more 
 	    significant \textit{P} value than a given cutoff (rows) is plotted
 	    against the quantiles across samples within a tissue 
 	    (x-axis, median and 90\%). The data is stratified by the different splicing 
-	    metrics (columns, with green, orange, and violette for 
+	    metrics (columns, with green, orange, and purple for 
 	    $\psi_5$, $\psi_3$, and $\theta$, respectively). 
 	    Each distribution is based on the 48 GTEx tissues.
-	    \textbf{(B)} Same as in A but the frequency (y-axis) of \textit{P} values 
+	    \textbf{(b)} Same as (a) but the frequency (y-axis) of \textit{P} values 
 	    being smaller than a given cutoff (columns) across a tissue is plotted per 
 	    splicing metrics (x-axis).
 }
 \end{figure}
 \pagebreak
 
-%% Figure S7
+
+%% Figure S9
+\begin{figure}[h]
+\centering
+	\includegraphics[width=\textwidth]{Figure4_precRec_clean_zscoreCheck/Skin_Not_Sun_Exposed_Suprapubic/uniformDistr/precRec_byJunctionGroup_psi5_clean.png}
+	\caption{
+	    \textbf{Splicing outlier detection benchmark in GTEx for $\psi_5$.}
+        The proportion of simulated outliers among reported outliers (precision)
+plotted against the proportion of reported simulated outliers among all 
+simulated outliers (recall) for increasing \textit{P} values (FRASER, green; 
+beta binomial, pink) or decreasing absolute PCA-based z scores (natural scale, 
+orange, Supplementary Information; logit scale, purple). Moreover, all events 
+with $|\Delta\psi_5| < 0.1$ are ranked last. The data are stratified by the mean 
+coverage of the intron (columns) and by the injected absolute $\psi_5$ value (rows).
+The cutoffs for each method are marked (FDR $<$ 0.1, circle; absolute z score $>$ 2, triangle).
+The light ribbons around the curves indicate 95\% confidence bands estimated 
+by bootstrapping.
+}
+\end{figure}
+\pagebreak
+
+
+%% Figure S10
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{Figure4_precRec/Skin_Not_Sun_Exposed_Suprapubic/uniformDistr/precRec_byJunctionGroup_psi3.png}
@@ -150,9 +218,9 @@ suprapubic skin GTEx tissue.
 outliers among all simulated outliers (recall, x-axis) for 
 increasing beta-binomial \textit{P} values computed using count ratio 
 expectations based on FRASER (green), a beta-binomial regression on the 
-latent space (orange), or on raw count ratios (violette, na\"ive BB) 
-and for decreasing absolute z scores ontop of a beta-binomial regression
-(pink) or PCA. Additionally, all events with $|\Delta\psi| < 0.1$ are ranked last.
+latent space (orange), or on raw count ratios (purple, na\"ive BB) 
+and for decreasing absolute z scores on top of a beta-binomial regression
+(pink) or PCA (light green). Additionally, all events with $|\Delta\psi| < 0.1$ are ranked last.
 Plots are stratified equally by injected amplitudes ($\Delta\psi$, by row) 
 and junction coverage (by column). The points indicate commonly 
 applied cutoffs (FDR $< 0.1$ and $< 0.05$ and absolute z scores $>2$ and $>3$). 
@@ -163,7 +231,7 @@ Light ribbons around the curves depict 95\% confidence bands estimated by bootst
 \pagebreak
 
 
-%% Figure S8
+%% Figure S11
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{Figure4_precRec/Skin_Not_Sun_Exposed_Suprapubic/uniformDistr/precRec_byJunctionGroup_psiSite.png}
@@ -175,7 +243,7 @@ Light ribbons around the curves depict 95\% confidence bands estimated by bootst
 \pagebreak
 
 
-%% Figure S9
+%% Figure S12
 \begin{figure}[h]
 \centering
 	\includegraphics[width=\textwidth]{FigureS11_outlier_events_by_method.png}
@@ -193,7 +261,7 @@ Light ribbons around the curves depict 95\% confidence bands estimated by bootst
 \pagebreak
 
 
-%% Figure S10
+%% Figure S13
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{FigureS9_full_pr_plot.png}
@@ -204,8 +272,9 @@ plotted against the proportion of reported simulated outliers among all
 simulated outliers (recall, x-axis) for increasing beta-binomial \textit{P} values 
 computed using count ratio expectations based on FRASER (green), 
 a beta-binomial regression on the latent space (orange), or on raw count 
-ratios (violette, na\"ive BB) and for decreasing absolute z scores ontop of 
-a beta-binomial regression (pink) or PCA. The data is stratified by the different splice metrics: $\psi_5$, $\psi_3$, and $\theta$ (rows). The points indicate commonly 
+ratios (purple, na\"ive BB) and for decreasing absolute z scores on top of 
+a beta-binomial regression (pink) or PCA (light green). The data is stratified 
+by the different splice metrics: $\psi_5$, $\psi_3$, and $\theta$ (rows). The points indicate commonly 
 applied cutoffs (FDR $< 0.1$ and $< 0.05$ and absolute z scores $>2$ and $>3$). 
 Light ribbons around the curves depict 95\% confidence bands estimated by bootstrapping.
 }
@@ -213,7 +282,7 @@ Light ribbons around the curves depict 95\% confidence bands estimated by bootst
 \pagebreak
 
 
-%% Figure S11
+%% Figure S14
 \begin{figure}[h]
 \centering
 	\includegraphics[width=\textwidth]{FigureS9_injectedVsFittedDpsi_PCA-BB-Decoder.png}
@@ -221,7 +290,7 @@ Light ribbons around the curves depict 95\% confidence bands estimated by bootst
 	    \textbf{Using a weighted beta-binomial loss for robustness against outlier data points.}
 For each injected outlier data point, the effect size of the injection 
 (y-axis, $\Delta\bullet$) is plotted against the predicted difference 
-(x-axis, observerd $\Delta\bullet -$ predicted $\Delta\bullet$) based on the beta-binomial 
+(x-axis, observed $\Delta\bullet -$ predicted $\Delta\bullet$) based on the beta-binomial 
 regression fit. The plot is stratified by the three splicing metrics $\psi_5$,
 $\psi_3$, and $\theta$ (rows) and by loss function used in the beta-binomial 
 regression (columns, non weighted and weighted). The blue line corresponds to a 
@@ -232,40 +301,122 @@ perfect fit. The data is based on the suprapubic skin GTEx tissue.
 \pagebreak
 
 
-%% Figure S12
+%% Figure S15
 \begin{figure}[h]
 \centering
-	\includegraphics[width=\textwidth]{FigureS10_GTEx_enrichment_pval.png}
+	\includegraphics[width=\textwidth]{FigureS14_BenchmarkBySwapping.png}
 	\caption{
-	    \textbf{Gene-based rare variant enrichment analysis.}
-	    \textbf{(A)} Enrichment using FRASER (y-axis) against enrichment using
-different aberrant splicing detection methods (x-axis, columns) for rare variants
-located in a splice region. The method applied are a beta-binomial regression on 
-the latent space with (i) beta-binomial \textit{P} values and (ii) Gaussian
-\textit{P} values, (iii) Dirichlet-Multinomial \textit{P} values based on
-Kremer et al., (iv) naïve beta-binomial \textit{P} values, and (v) 
-PCA-based Gaussian \textit{P} values. The enrichment is calculated for different 
-nominal \textit{P} value cutoffs (rows). Each dot represents a GTEx tissue. 
-\textbf{(B)} The same as A but an additional $|\Delta\psi| > 0.1$ cutoff is 
-applied on the aberrant splicing calles. \textbf{(C)} The same as A but based on
-rare variants predicted to afffect splicing by MMSplice. \textbf{(D)} The same
-as C but an additional $|\Delta\psi| > 0.1$ cutoff is applied on the aberrant 
-splicing calles.
+	    \textbf{Recall analysis of injected outliers by interchanging read counts of alternatively spliced genes between tissues.}
+	    Proportion of simulated outliers among reported outliers 
+(precision, y-axis) against the proportion of reported simulated 
+outliers among all simulated outliers (recall, x-axis) for 
+increasing beta-binomial \textit{P} values computed using count ratio 
+expectations based on FRASER (green) and on raw count ratios (orange, na\"ive BB) 
+and Dirichlet-Multinomial \textit{P} values computed using the method from 
+Kremer et al. (purple), LeafcutterMD (pink), and SPOT (light green). Light ribbons around the curves 
+depict 95\% confidence bands estimated by bootstrapping.
 }
 \end{figure}
 \pagebreak
 
 
-%% Figure S13
+%% Figure S16
+\begin{figure}[h]
+\centering
+	\includegraphics[width=\textwidth]{FigureS10_GTEx_enrichment_pval.png}
+	\caption{
+	    \textbf{Gene-based rare variant enrichment analysis.}
+	    \textbf{(a)} Enrichment using FRASER (y-axis) against enrichment using
+different aberrant splicing detection methods (x-axis, columns) for rare variants
+located in a splice region. The method applied are a beta-binomial regression on 
+the latent space with (i) beta-binomial \textit{P} values and (ii) Gaussian
+\textit{P} values, Dirichlet-Multinomial \textit{P} values based on
+(iii) Kremer et al. and (iv) LeafcutterMD, (v) na\"ive beta-binomial \textit{P} values, (vi) 
+PCA-based Gaussian \textit{P} values, and Dirichlet-Multinomial \textit{P}
+values based on (vii) SPOT. The enrichment is calculated for different 
+nominal \textit{P} value cutoffs (rows). Each dot represents a GTEx tissue. 
+\textbf{(b)} The same as (a) but based on rare variants predicted to affect splicing by MMSplice.
+\textbf{(c)} The same as (a) but an additional $|\Delta\psi| > 0.1$ cutoff was
+applied on the aberrant splicing calls. \textbf{(d)} The same
+as b but an additional $|\Delta\psi| > 0.1$ cutoff was applied on the aberrant 
+splicing calls.
+}
+\end{figure}
+\pagebreak
+
+
+%% Figure S17
+\begin{figure}[h]
+\centering
+	\includegraphics[width=\textwidth]{FigureS17_outlier_call_reproducibility.png}
+	\caption{\textbf{Reproducibility of splicing outlier calls across GTEx tissues.}
+        \textbf{(a)} Barplot of the number of gene-level events (y-axis) against
+their reproducibility (x-axis) across GTEx tissues. The reproducibility is 
+defined as the number of tissues an event is observered at a nominal \textit{P}
+value $p < 10^{-3}$ given it was observerd at least once at a nominal \textit{P}
+value $p < 10^{-5}$. The data is stratified by associated variant status and 
+grouped by the different methods: FRASER (green), na\"ive beta-binomial (orange),
+LeafcutterMD (purple), and SPOT (pink). 
+\textbf{(b)} Same as (a) but plotted as the proportion (y-axis) of reproducible 
+gene-level splicing outlier calls in GTEx tissues (number of tissues, x-axis). 
+\textbf{(c)} Same as (b) but with at least one call at a nominal \textit{P} value $p < 10^{-7}$.
+\textbf{(d)} Same as (b) but with at least one call at a nominal \textit{P} value $p < 10^{-9}$.
+}
+\end{figure}
+\pagebreak
+
+
+%% Figure S18
+\begin{figure}[h]
+\centering
+	\includegraphics[width=\textwidth]{FigureS18_GTEx_enrichment_for_reproducible_events.png}
+	\caption{
+	    \textbf{Gene-based rare variant enrichment on reproducible splicing outlier calls.}
+	    \textbf{(a)} Enrichment using FRASER (y-axis) against enrichment using
+different aberrant splicing detection methods (x-axis, columns) for rare variants
+located in a splice region. The methods applied are (i) na\"ive beta-binomial 
+\textit{P} values, Dirichlet-Multinomial \textit{P} values based on 
+(ii) LeafcutterMD and (iii) SPOT. The enrichment is calculated for different 
+nominal \textit{P} value cutoffs (rows) and increased reproducibility cutoff: 
+$p < 10^{-3}$ in at least 0, 1, or 9 other tissues (color).
+Each dot represents a GTEx tissue. \textbf{(b)} The same as (a) but based on rare 
+variants predicted to affect splicing by MMSplice.
+\textbf{(c)} The same as (a) but an additional $|\Delta\psi| > 0.1$ cutoff was
+applied on the aberrant splicing calls. \textbf{(d)} The same
+as b but an additional $|\Delta\psi| > 0.1$ cutoff was applied on the aberrant 
+splicing calls.
+}
+\end{figure}
+\pagebreak
+
+%% Figure S19
 \begin{figure}[h]
 \centering
 	\includegraphics[width=\textwidth]{FigureS11_IntronRetention.png}
 	\caption{
 	    \textbf{Contribution of intron retention in aberrant splicing.}
-\textbf{(A)} Barplot of the percentage of aberrant splicing events on the gene level
-grouped by the detection metrics: alternative splicing only (violette, $\psi$ metric), 
-intron retention (green, $\theta$ metric), and both (red). \textb{(B)} Same as A
+\textbf{(a)} Barplot of the percentage of aberrant splicing events on the gene level
+grouped by the detection metrics: alternative splicing only (purple, $\psi$ metric), 
+intron retention (green, $\theta$ metric), and both (red). \textbf{(b)} Same as (a)
 but with the absolute number of detected events.
+}
+\end{figure}
+\pagebreak
+
+
+%% Figure S19
+\begin{figure}[h]
+\centering
+	\includegraphics[width=\textwidth]{FigureS14_power_analysis.png}
+	\caption{
+	    \textbf{Sample size analysis in Kremer et al.}
+\textbf{(a)} The percentage of the recovered known disease-causing splicing 
+outliers in Kremer et al. (y-axis) is plotted against the used sample size (x-axis). 
+\textbf{(b)} The median of splicing outliers across all samples (y-axis) is plotted
+against the used sample size (x-axis).
+\textbf{(c)} The negative $\log_{10}$ \textit{P}-value for all known disease-causing
+splicing outliers (y-axis) is plotted against the used sample size (x-axis). 
+The color depicts the gene with a known splice defect.
 }
 \end{figure}
 \pagebreak
@@ -274,7 +425,20 @@ but with the absolute number of detected events.
 \FloatBarrier
 
 
-\section{Supplemental Methods}
+\section{Supplementary Information}
+
+\subsection{Natural Z Score Calculation}
+
+The natural z scores $z^{n}_{ij}$ are calculated per intron on the difference 
+between the measured $\psi$ value including pseudocounts and the proportion 
+expectation $\mu_{ij}$, as follows:
+
+\begin{align*}
+    z^n_{ij} =& \frac{\Delta\psi_{ij} - \overline{\Delta\psi_{j}}}{\text{sd}(\Delta\psi_{j})} \\
+    \Delta\psi_{ij} =& \psi_{ij} - \mu_{ij} \\
+                    =& \frac{k_{ij} + 1}{n_{ij} + 2} - \mu_{ij}. \\
+\end{align*}
+
 
 \subsection{Fitting of the parameters}
 

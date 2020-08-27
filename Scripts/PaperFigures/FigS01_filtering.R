@@ -41,11 +41,35 @@ outPdf      <- snakemake@output$outPdf
 datasets
 
 #+ echo=FALSE
-fds_ls <- lapply(datasets, loadFraseRDataSet, dir=workingDir)
+fds_ls <- lapply(datasets, loadFraserDataSet, dir=workingDir)
 names(fds_ls) <- datasets
 
 stats <- lapply(statsFiles, readRDS)
 names(stats) <- dName4plot(basename(dirname(statsFiles)))
+
+#' 
+#' old filter expression function
+#' 
+plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
+    cts    <- K(fds, "psi5")
+    rowlgm <- exp(rowMeans(log(cts + 1)))
+    
+    dt <- data.table(
+        value=rowlgm,
+        passed=mcols(fds, type="j")[['passed']])
+    colors <- brewer.pal(3, "Dark2")[2:1]
+    ggplot(dt, aes(value, fill=passed)) +
+        geom_histogram(bins=bins) +
+        scale_x_log10() +
+        scale_y_log10() +
+        scale_fill_manual(values=colors, name="Passed",
+                          labels=c("False", "True")) +
+        xlab("Mean Junction Expression") +
+        ylab("Count") +
+        ggtitle("Expression filtering") +
+        theme_bw() +
+        theme(legend.position=legend.position)
+}
 
 #'
 #' # Plot filter expression per dataset
@@ -89,19 +113,20 @@ g1
 #'
 #+ assemble full figure
 g <-ggarrange(ncol=1, nrow=2, legend="none", heights = c(1,2.5),
-    ggarrange(labels=LETTERS[1:4], nrow=1, align="hv", legend="none",
+    ggarrange(labels=letters[1:4], nrow=1, align="hv", legend="none",
         plot_ls[[1]] + annotation_custom(
             get_legend(plot_ls[[1]]),
-                xmin=log10(2000),  xmax=log10(100000),
+                xmin=log10(1000),  xmax=log10(50000),
                 ymin=log10(200000), ymax=log10(2000000)),
         plot_ls[[2]],
         plot_ls[[3]],
         plot_ls[[4]]),
-    ggarrange(labels=LETTERS[5], g1, legend="none"))
+    ggarrange(labels=letters[5], g1, legend="none"))
 g
 
 #+ save heatmap figure
 factor <- 0.6
+outPng
 ggsave(outPng, g, width = 17*factor, height = 16*factor)
 ggsave(outPdf, g, width = 17*factor, height = 16*factor)
 

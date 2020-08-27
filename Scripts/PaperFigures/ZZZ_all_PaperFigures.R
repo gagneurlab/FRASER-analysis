@@ -14,7 +14,7 @@
 #'   - FigureS01: '`sm config["FIGDIR"] + "/FigureS1_filtering.pdf"`'
 #'   - FigureS02: '`sm config["FIGDIR"] + "/FigureS2_heatmap_psi3.pdf"`'
 #'   - FigureS03: '`sm config["FIGDIR"] + "/FigureS2_heatmap_psiSite.pdf"`'
-#'   - FigureS04: '`sm config["FIGDIR"] + "/FigureS4_finding_q.pdf"`'
+#'   - FigureS04: '`sm config["FIGDIR"] + "/FigureS4_finding_q_new.pdf"`'
 #'   - FigureS05: '`sm config["FIGDIR"] + "/FigureS5_qq_plots.pdf"`'
 #'   - FigureS06: '`sm config["FIGDIR"] + "/FigureS6_outlier_numbers.pdf"`'
 #'   - FigureS07: '`sm config["FIGDIR"] + "/Figure4_precRec/Skin_Not_Sun_Exposed_Suprapubic/uniformDistr/precRec_byJunctionGroup_psi3.pdf"`'
@@ -22,6 +22,9 @@
 #'   - FigureS09: '`sm config["FIGDIR"] + "/FigureS9_injectedVsFittedDpsi_PCA-BB-Decoder.pdf"`'
 #'   - FigureS10: '`sm config["FIGDIR"] + "/FigureS10_GTEx_enrichment_pval.pdf"`'
 #'   - FigureS11: '`sm config["FIGDIR"] + "/FigureS11_IntronRetention.pdf"`'
+#'   - FigureS15: '`sm config["FIGDIR"] + "/FigureS15_correlations_minN.pdf"`'
+#'   - FigureS16: '`sm config["FIGDIR"] + "/FigureS16_qEst_outlier_distr_psi5.pdf"`'
+#'   - FigureS17: '`sm config["FIGDIR"] + "/Figure4_precRec_clean_zscoreCheck/Skin_Not_Sun_Exposed_Suprapubic/uniformDistr/precRec_byJunctionGroup_psi5_clean.pdf"`'
 #'  output:
 #'  - figure:  '`sm config["FIGDIR"] + "/Figure_all_main.pdf"`'
 #'  - figureS: '`sm config["FIGDIR"] + "/Figure_all_sup.pdf"`'

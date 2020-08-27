@@ -44,7 +44,7 @@ nqqplots <- 12
 seed <- 42
     
 #+ echo=FALSE
-fds <- loadFraseRDataSet(dir=workingDir, dataset)
+fds <- loadFraserDataSet(dir=workingDir, dataset)
 set.seed(seed)
 
 #'
@@ -62,7 +62,7 @@ qqplot_ls <- lapply(qqplot_ls, function(x){
     x + theme(legend.position="none", axis.title.x=element_blank(),
             axis.title.y=element_blank(), title=element_blank()) })
 g1 <- ggarrange(plotlist=qqplot_ls, ncol=2, nrow=ceiling(nqqplots/2), 
-        common.legend=FALSE, labels=LETTERS[1:nqqplots],
+        common.legend=FALSE, labels=letters[1:nqqplots],
         hjust=0.2, vjust=0.5)
 g1
 
@@ -73,7 +73,7 @@ expplot_ls <- lapply(expplot_ls, function(x){
     x + theme(legend.position="none", axis.title.x=element_blank(),
             axis.title.y=element_blank(), title=element_blank()) })
 g2 <- ggarrange(plotlist=expplot_ls, ncol=2, nrow=ceiling(nqqplots/2), 
-        common.legend=FALSE, labels=LETTERS[1:nqqplots + nqqplots], 
+        common.legend=FALSE, labels=letters[1:nqqplots + nqqplots], 
         hjust=0.2, vjust=0.5)
 g2
 

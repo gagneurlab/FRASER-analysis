@@ -16,12 +16,17 @@ where
 \alpha &= \mu \left(\frac{1-\rho}{\rho}\right) \text{and } \beta = (\mu - 1)\left(\frac{\rho - 1}{\rho}\right).
 \end{align*}
 
-The variance of the distribution is given by:
+The variance of a beta-binomially distributed variable $X$ is given by:
 
 \begin{align*}
-Var = \frac{\mu (1 - \mu) (1 + (n-1)\rho )}{n}.
+\text{Var}(X) = n \mu (1 - \mu) (1 + (n-1)\rho )
 \end{align*}
 
+and the variance of the count ratio $\frac{k}{n}$ is then
+
+\begin{align*}
+\text{Var}\left(\frac{X}{n}\right) = \frac{\mu (1 - \mu) (1 + (n-1)\rho )}{n}.
+\end{align*}
 
 \subsubsection*{The negative log-likelihood of the beta-binomial distribution}
 
@@ -33,9 +38,64 @@ The negative log-likelihood ($\text{nll}$) of the model is given by:
 &+ \sum_{ij}\log(\Gamma(\alpha_{ij})) + \sum_{ij}\log(\Gamma(\beta_{ij})) - \sum_{ij}\log(\Gamma(\alpha_{ij} + \beta_{ij})).
 \end{align*}
 
+\subsubsection*{Fitting the intra-class correlation parameter $\rho$}
 
-For the optimization of the model only the terms of $\text{nll}$
-that are dependent on $\matr{W}_e$ and $\matr{W}_d$ need to be considered. 
+For the optimization of the intra-class correlation parameter $\rho$ only the 
+$\rho$ depending terms in $\text{nll}$ need to be considered and yield the 
+following truncated form of the negative log likelihood, with pseudocounts of $1$
+and $2$ added to $k$ and $n$, respectively:
+
+\begin{align*}
+\text{nll}_{\rho} =& 
+     - \sum_{ij}\log(\Gamma(\alpha_{ij}+k_{ij})) % a + k
+     - \sum_{ij}\log(\Gamma(\beta_{ij}+n_{ij}-k_{ij})) % b + n - k
+     + \sum_{ij}\log(\Gamma(\alpha_{ij} + \beta_{ij} + n_{ij})) \\ % a + b + n
+    &+ \sum_{ij}\log(\Gamma(\alpha_{ij})) % a
+     + \sum_{ij}\log(\Gamma(\beta_{ij})) % b
+     - \sum_{ij}\log(\Gamma(\alpha_{ij} + \beta_{ij})). % a + b
+\end{align*}
+
+In the following $y_{ij}$ is an element of $\matr{Y}$ defined as:
+
+\begin{align}\label{eq:Y}
+\matr{Y} &= \matr{\widetilde{X}} \matr{W}_e \matr{W}_d + \matr{b},
+\end{align}
+
+where the element $\widetilde{x}_{ij}$ of the matrix $\matr{\widetilde{X}}$ is given by: 
+
+\begin{align*}
+\widetilde{x}_{ij} &= x_{ij} - \bar{x}_j, \\
+x_{ij} &= \text{logit} \left (\frac{k_{ij}+1}{n_{ij}+2} \right), \\
+\text{logit}(a) &= \log \frac{a}{1-a}.
+\end{align*}
+
+The expectations $\mu_{ij}$ are then modelled by:
+
+\begin{align*}
+\mu_{ij} &= \sigma \left (y_{ij} \right) = \frac{e^{y_{ij}}}{1 + e^{y_{ij}}}
+\end{align*}
+
+
+Hence, $\text{nll}_{\rho}$ can be rewritten as:
+
+\begin{align*}
+\text{nll}_{\rho} =& 
+     - \sum_{ij}\log\left(\Gamma\left(\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} }\frac{ 1-\rho_{ij} }{ \rho_{ij} } + k_{ij} + 1 \right) \right) \\ % a + k
+    &- \sum_{ij}\log\left(\Gamma\left(\left(\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} } - 1 \right) \frac{ \rho_{ij} - 1 }{ \rho_{ij} } + n_{ij} - k_{ij} + 1\right) \right) \\ % b + n - k
+    &+ \sum_{ij}\log\left(\Gamma\left(\frac{ 1 - \rho_{ij} }{ \rho_{ij} } + n_{ij} + 2\right) \right) \\ % a + b + n
+    &+ \sum_{ij}\log\left(\Gamma\left(\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} }\frac{ 1-\rho_{ij} }{ \rho_{ij} }\right) \right) \\ % a
+    &+ \sum_{ij}\log\left(\Gamma\left( \left (\frac{ e^{y_{ij}} }{ 1+e^{y_{ij}} } - 1 \right) \frac{ \rho_{ij} - 1 }{ \rho_{ij} }\right) \right) \\ % b
+    &- \sum_{ij}\log\left(\Gamma\left(\frac{ 1 - \rho_{ij} }{ \rho_{ij} } \right) \right) % a + b
+\end{align*}
+
+To fit $\rho$, we use $optimize$ provided in the R base package \textit{stats}.
+To not run into convergence issues or numerical instability of the log gamma function, 
+we estimate the value of the log gamma function if not $-35 < y_{ij} < 30$.
+
+\subsection{Alternative approaches to model the encoder and decoder}
+
+For the optimization of the autoencoder model only the terms of $\text{nll}$
+that are dependent on $\matr{W}_e$ or $\matr{W}_d$ need to be considered. 
 Since
 \begin{align*}
 \alpha + \beta = \frac{1-\rho}{\rho}
@@ -49,32 +109,6 @@ $1$ and $2$ added to $k$ and $n$, respectively:
 \text{nll}_{\matr{W}} =& \sum_{ij}\log(\Gamma(\alpha_{ij})) + \sum_{ij}\log(\Gamma(\beta_{ij})) \\
 &- \sum_{ij}\log(\Gamma(\alpha_{ij}+k_{ij}+1)) - \sum_{ij}\log(\Gamma(\beta_{ij}+n_{ij}-k_{ij}+1)).
 \end{align}
-
-
-In the following $y_{ij}$ is an element of $\matr{Y}$ defined as:
-
-\begin{align}\label{eq:Y}
-\matr{Y} &= \matr{\widetilde{X}} \matr{W}_e \matr{W}_d + \matr{b},
-\end{align}
-
-where the element $\widetilde{x}_{ij}$ of the matrix $\matr{\widetilde{X}}$ is given by: 
-
-\begin{align*}
-\widetilde{x}_{ij} &= x_{ij} - \bar{x}_j, \\
-x_{ij} &= \text{logit} \left (\frac{k_{ij}+1}{n_{ij}+2} \right),
-\text{logit}(a) &= \log \frac{a}{1-a}.
-\end{align*}
-
-The expectations $\mu_{ij}$ are then modeled by:
-
-\begin{align*}
-\mu_{ij} &= \sigma \left (y_{ij} \right) = \frac{e^{y_{ij}}}{1 + e^{y_{ij}}}
-\end{align*}
-
-%The full form of the term $\log(\Gamma(\alpha))$ is therefore:
-%\begin{align*}
-%\log(\Gamma(\alpha)) &= \log(\Gamma(\mu \frac{1-\rho}{\rho})) = \log\left(\Gamma\left(\frac{e^{\hat{X}}}{1+e^{\hat{X}}}\frac{1-\rho}{\rho}\right)\right) 
-%\end{align*}
 
 Hence,  $\text{nll}_{\matr{W}}$ can be rewritten as:
 
@@ -92,12 +126,12 @@ model as described in Methods.
 
 \subsubsection*{Update of the encoder and decoder matrix}
 
-The updating of the matrix $\matr{W}_d$ is performed intron-wise where as the 
+The updating of the matrix $\matr{W}_d$ is performed intron-wise whereas the 
 encoder matrix $\matr{W}_e$ is performed on the full matrix. For each update step,
 the intron-wise or matrix-wise average negative log likelihood is minimized. 
 To not run into convergence issues or numerical instability of the digamma function, 
 we estimate the value of the digamma function $\psi$ if not $-35 < y_{ij} < 30$.
-From Equation \ref{eq:nll-w} and Equation \ref{eq:Y}, we obtain the gradients:
+From Equation  \ref{eq:Y} and Equation \ref{eq:nll-w}, we obtain the gradients:
 
 \begin{align*}
     \frac{d\text{nll}}{d\matr{W}_e} &= \matr{\widetilde{X}}^T \matr{A} \matr{W}_d + \matr{\widetilde{X}}^T \matr{B} \matr{W}_d - \matr{\widetilde{X}}^T \matr{C} \matr{W}_d - \matr{\widetilde{X}}^T \matr{D} \matr{W}_d  \\  

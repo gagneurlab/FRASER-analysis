@@ -3,8 +3,8 @@
 #' author: Ines Scheller
 #' wb:
 #'  input:
-#'   - sashimi: 'Data/figures/TAZ.png'
-#'   - fdsin:   '`sm config["DATADIR"] + "/datasets/savedObjects/Kremer__" + config["AE_IMPLEMENTATION"] + "/pajdBetaBinomial_psiSite.h5"`'
+#'   - sashimi: 'Data/paper/figures_svg/TAZ.png'
+#'   - fdsin:   '`sm config["DATADIR"] + "/datasets/savedObjects/Kremer__" + config["AE_IMPLEMENTATION"] + "/padjBetaBinomial_psiSite.h5"`'
 #'  output:
 #'   - outPng: '`sm config["FIGDIR"] + "/Figure7_TAZ.png"`'
 #'   - outPdf: '`sm config["FIGDIR"] + "/Figure7_TAZ.pdf"`'
@@ -39,7 +39,7 @@ fdsin
 outPng
 
 #+ load fds
-fds <- loadFraseRDataSet(file=fdsin)
+fds <- loadFraserDataSet(file=fdsin)
 fds <- annotateRanges(fds)
 
 #+ get pvalues per gene
@@ -63,22 +63,23 @@ g1 <- g1tmp + annotate("text", label="TAZ",
     theme(plot.title=element_blank())
 g1
 
-
-g2 <- plotExpression(fds, result=grOfInterest) + 
+xticks <- c(10, 20, 30, 40)
+yticks <- c(0, 3, 10, 30)
+g2 <- plotExpression(fds, result=grOfInterest, label=NULL) + 
     theme(plot.title=element_blank()) +
     ylab("Split reads (K)\nfrom exon 4 to exon 5") +
     xlab("All split reads (N)\nat exon 5 acceptor") + 
-    scale_x_log10(breaks=xticks + 1, labels=xticks) + 
-    scale_y_log10(breaks=yticks + 1, labels=yticks)
+    scale_x_log10(breaks=xticks, labels=xticks) + 
+    scale_y_log10(breaks=yticks, labels=yticks)
 g2
 
 
-g3 <- plotQQ(fds, result=grOfInterest) + 
+g3 <- plotQQ(fds, result=grOfInterest, label=NULL) + 
     theme(plot.title=element_blank())
 g3
 
 
-g4 <- plotExpectedVsObservedPsi(fds, result=grOfInterest) + 
+g4 <- plotExpectedVsObservedPsi(fds, result=grOfInterest, label=NULL) + 
     scale_color_manual(values=c("firebrick", "gray70")) + 
     theme(plot.title=element_blank())
 g4
@@ -98,9 +99,9 @@ g5
 #'
 #+ assemble figure for psi5
 g <- ggarrange(ncol=2, widths=c(1.2,1),
-    ggarrange(nrow=2, ncol=2, labels=LETTERS[1:4], align="hv",
+    ggarrange(nrow=2, ncol=2, labels=letters[1:4], align="hv",
         g1, g2, g4, g3),
-    ggarrange(g5, labels=LETTERS[5]))
+    ggarrange(g5, labels=letters[5]))
 g
 
 

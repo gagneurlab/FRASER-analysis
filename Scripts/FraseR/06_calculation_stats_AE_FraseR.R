@@ -3,12 +3,11 @@
 #' author: Christian Mertes
 #' wb:
 #'  params:
-#'   - progress: FALSE
+#'   - progress: false
 #'  input:
 #'   - inHtml: 'Output/html/FraseR/{dataset}/{method}_autoencoder_fit.html'
 #'  output:
-#'   - fdsout: '`sm config["DATADIR"] + "/datasets/savedObjects/{dataset}__{method}/pajdBetaBinomial_psiSite.h5"`'
-#'   - fdsp:   '`sm config["DATADIR"] + "/datasets/savedObjects/{dataset}__{method}/pvaluesBetaBinomial_psiSite.h5"`'
+#'   - fdsout: '`sm config["DATADIR"] + "/datasets/savedObjects/{dataset}__{method}/padjBetaBinomial_psiSite.h5"`'
 #'   - wBhtml: 'Output/html/FraseR/{dataset}/{method}_stat_calculation.html'
 #'  threads: 20
 #'  type: noindex
@@ -21,8 +20,8 @@ source("./src/r/config.R")
 if(FALSE){
     source(".wBuild/wBuildParser2.R")
     wildcards <- list(dataset="Kremer", method="FraseR")
-    parseWBHeader2("./Scripts/FraseR/06_calculation_stats_AE_FraseR.R", wildcards)
-    slot(snakemake, "wildcards", check=FALSE) <- wildcards
+    parseWBHeader2("./Scripts/FraseR/06_calculation_stats_AE_FraseR.R", 
+            wildcards=wildcards, rerun=TRUE)
 }
 
 #+ input
@@ -32,7 +31,7 @@ name       <- paste0(dataset, "__", method)
 fdsFile    <- snakemake@output$fdsout
 workingDir <- dirname(dirname(dirname(fdsFile)))
 bpWorkers  <- bpMaxWorkers(snakemake@threads)
-bpProgress <- snakemake@params[[1]]$progress
+bpProgress <- as.logical(snakemake@params$progress)
 
 #'
 #' # Load Zscores data
@@ -42,9 +41,9 @@ method
 workingDir
 
 #+ echo=FALSE
-fds <- loadFraseRDataSet(dir=workingDir, name=name)
+fds <- loadFraserDataSet(dir=workingDir, name=name)
 BPPARAM <- MulticoreParam(bpWorkers, progressbar=bpProgress)
-parallel(fds) <- BPPARAM
+register(BPPARAM)
 
 
 #'
@@ -54,14 +53,14 @@ parallel(fds) <- BPPARAM
 #
 for(type in psiTypes){
     message(date(), ": running zscore for ", type, " ", method, " ", dataset)
-    fds <- calculateZscore(fds, type=type, correction=method)
+    fds <- calculateZscore(fds, type=type)
 }
 
 #'
 #' ## Pvalues
 for(type in psiTypes){
     message(date(), ": running pvalue for ", type, " ", method, " ", dataset)
-    fds <- calculatePvalues(fds, type=type, correction=method, 
+    fds <- calculatePvalues(fds, type=type, implementation=method, 
             distributions=c("betabinomial", "normal"))
 }
 
@@ -80,6 +79,6 @@ fds <- annotateRanges(fds)
 #'
 #' # Save results
 #'
-fds <- saveFraseRDataSet(fds)
+fds <- saveFraserDataSet(fds)
 fds
 

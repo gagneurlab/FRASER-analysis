@@ -179,7 +179,7 @@ readZscoreCutoff <- function(f, cutoffs=c(2,3,5), dPsiCut=0.1){
         if(nrow(ans) == 0){
             return(dt[,.(recall=0, precision=0, Nsamples, inj, inj_value, 
                     junctionMeanBin, correction, pmethod, 
-                    type = "zScore rank", cutoff=x)][1])
+                    type = paste0("zScore rank\n& deltaPSI > ", dPsiCut), cutoff=x)][1])
         }
         setorder(ans, -score)
         ans[, .(
@@ -191,7 +191,7 @@ readZscoreCutoff <- function(f, cutoffs=c(2,3,5), dPsiCut=0.1){
             junctionMeanBin = unique(junctionMeanBin),
             correction = unique(correction),
             pmethod = unique(pmethod),
-            type = "zScore rank",
+            type = paste0("zScore rank\n& deltaPSI > ", dPsiCut),
             cutoff=x)]
     })
     rbindlist(ans)
@@ -216,8 +216,8 @@ readPadjCutoff <- function(f, cutoffs=c(0.001, 0.01, 0.05, 0.1), FDR_LIMIT=0.1, 
         if(nrow(ans) == 0){
             return(dt[,.(recall=0, precision=0, Nsamples, inj, inj_value, junctionMeanBin,
                          correction, pmethod, 
-                         type = paste('P-value rank & deltaPSI >', 
-                                      dPsiCutoff, '\n& FDR <', FDR_LIMIT), cutoff=x)][1])
+                         type = paste0('P-value rank & deltaPSI > ', 
+                                      dPsiCutoff, '\n& FDR < ', FDR_LIMIT), cutoff=x)][1])
         }
         ans[, .(
             recall=ans[nrow(ans),recall],
@@ -228,7 +228,7 @@ readPadjCutoff <- function(f, cutoffs=c(0.001, 0.01, 0.05, 0.1), FDR_LIMIT=0.1, 
             junctionMeanBin = unique(junctionMeanBin),
             correction = unique(correction),
             pmethod = unique(pmethod),
-            type = paste('P-value rank & FDR <', FDR_LIMIT, '\n& deltaPSI >', dPsiCutoff),
+            type = paste0('P-value rank & FDR < ', FDR_LIMIT, '\n& deltaPSI > ', dPsiCutoff),
             cutoff=x)]
     })
     rbindlist(ans)
@@ -324,7 +324,7 @@ readBootstrapData <- function(f, rankType=c("pvalue", "zscore"),
     ans$inj             <- unique(dt$inj)
     ans$junctionMeanBin <- unique(dt$junctionMeanBin )
     if(!is.na(dPsiCutoff) & dPsiCutoff > 0){
-        ans[,type:=paste0(type, '\n& deltaPSI >', dPsiCutoff)]
+        ans[,type:=paste0(type, '\n& deltaPSI > ', dPsiCutoff)]
     }
     
     # return it
@@ -387,7 +387,7 @@ score_sign <- function(zScore, values4Cut, cutoff, set2z=0){
     score <- abs(score)
     if(!missing(values4Cut)){
         if(!(is.null(cutoff) | is.na(cutoff) | cutoff == 0)){
-            score[values4Cut < cutoff] <- set2z
+            score[abs(values4Cut) < cutoff] <- set2z
         }
     }
     return(score)

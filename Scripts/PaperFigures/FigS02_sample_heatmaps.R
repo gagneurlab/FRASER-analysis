@@ -46,7 +46,7 @@ datasets
 tissues
 
 #+ echo=FALSE
-fds_ls <- bplapply(datasets, loadFraseRDataSet, dir=workingDir, BPPARAM=BPPARAM)
+fds_ls <- bplapply(datasets, loadFraserDataSet, dir=workingDir, BPPARAM=BPPARAM)
 names(fds_ls) <- basename(dirname(fdsFiles))
 
 stats_ls <- lapply(statsFiles, readRDS)
@@ -194,7 +194,7 @@ displayNames <- dName4plot(datasets, TRUE)
 displayNames[grepl("Skin not Sun Exposed", displayNames)] <- "Suprapubic Skin"
 g <- ggarrange(ncol=2, widths=c(31, 5),
     ggarrange(nrow=3, heights=c(5, 0.3, 5.2),
-        ggarrange(nrow=1, widths=c(1,10,10,10), labels=c("", "A", "B", "C"),
+        ggarrange(nrow=1, widths=c(1,10,10,10), labels=c("", letters[1:3]),
             font.label=list(size=20, face="bold"),
             grid.text("Samples                          ", rot=90, gp=gpar(fontsize=14)),
             get_heatmap_grob(heatmap[[1]][4]$gtable),
@@ -206,7 +206,7 @@ g <- ggarrange(ncol=2, widths=c(31, 5),
             grid.text(paste("        ", displayNames[2], "samples"), gp=gpar(fontsize=14)),
             grid.text(paste("                      ", displayNames[3], "samples"), gp=gpar(fontsize=14)),
             grid.text("")),
-        ggarrange(ncol=1, labels=c("D"), label.y=1.05,
+        ggarrange(ncol=1, labels=c(letters[4]), label.y=1.05,
             font.label=list(size=20, face="bold"),
             corBoxplots + theme(legend.position="bottom"))),
     get_legend_grob(heatmap[[3]][4]$gtable, spacing=60)

@@ -345,9 +345,14 @@ mName4Plot <- function(x, removeTest=TRUE, AE_Name){
         } else if(endsWith(i, "_np")){
             suffix <- "_np"
         }
+        if(gsub("_[pz]$", "", i) == AE_Name){
+            i <- "AE_Name"
+        }
         ans <- switch(gsub("_[pz]$", "", i),
             `AE_Name` = "FRASER",
-            BB = "BetaBinom",
+            BB = "naïve BB",
+            LeafcutterMD="LeafcutterMD",
+            SPOT="SPOT",
             Leafcutter = "Kremer et al.",
             PCA = "PCA",
             `PCA-BB-Decoder` = "BB-AE-weight",
@@ -372,7 +377,7 @@ SMNABTCHT4plot <- function(x){
             yy
         ))
     }
-    if(any(class(x) %in% c("data.frame", "data.table", "DataFrame"))){
+    if(any(class(x) %in% c("data.frame", "data.table", "DataFrame", "DFrame"))){
         x$SMNABTCHT <- correctName(x$SMNABTCHT)
     } else {
         x <- correctName(x)
@@ -392,7 +397,7 @@ GENDER4plot <- function(x){
                 yy
         ))
     }
-    if(any(class(x) %in% c("data.frame", "data.table", "DataFrame"))){
+    if(any(class(x) %in% c("data.frame", "data.table", "DataFrame", "DFrame"))){
         x$GENDER <- correctName(x$GENDER)
     } else {
         x <- correctName(x)

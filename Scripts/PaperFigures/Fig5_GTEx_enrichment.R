@@ -33,6 +33,8 @@ outPdf         <- snakemake@output$outPdf
 threads        <- snakemake@threads
 
 FraseR_implementation <- snakemake@config$AE_IMPLEMENTATION
+METHODS_2_PLOT <- c("BB_p", "Leafcutter_p", "LeafcutterMD_p", "SPOT_p")
+PVALUES_2_PLOT <- c(-3, -5)
 FDR_LIMIT      <- 0.1
 BPPARAM        <- MulticoreParam(threads, 100, progre=TRUE)
 
@@ -73,6 +75,10 @@ dt2plot <- rbind(
         dt2plotMMSplice[,snptype:="MMSplice"])
 dt2plot[,snptype:=factor(snptype, levels=c("Splice region", "MMSplice"))]
 
+#' 
+#' remove multi tissue outlier calls
+#'
+dt2plot <- dt2plot[multiCall == 1]
 
 #'
 #' Create P value enrichment plot
@@ -82,39 +88,43 @@ dt2plot[,snptype:=factor(snptype, levels=c("Splice region", "MMSplice"))]
 AE_METHOD <- paste0(FraseR_implementation, "_p")
 frdt   <- dt2plot[cutoff == TRUE & Method == AE_METHOD,      .(
         FraseR=enrichment, FraseR_min=min.ci, FraseR_max=max.ci, tissue, score, snptype)]
-rlcdt  <- dt2plot[cutoff == TRUE & Method == "Leafcutter_p", .(Method="Kremer et al.",
-        enrich=enrichment, enrich_min=min.ci, enrich_max=max.ci, tissue, score, snptype)]
-pcandt  <- dt2plot[cutoff == TRUE & Method == "PCA_np", .(Method="PCA + Gaussian P",
-        enrich=enrichment, enrich_min=min.ci, enrich_max=max.ci, tissue, score, snptype)]
+otherdt <- dt2plot[cutoff == TRUE & Method %in% METHODS_2_PLOT, .(
+        Method, enrich=enrichment, enrich_min=min.ci, 
+        enrich_max=max.ci, tissue, score, snptype)]
+otherdt[, Method:=mName4Plot(Method, removeTest=TRUE, AE_Name=AE_METHOD)]
+otherdt[, Method:=factor(Method, levels=mName4Plot(METHODS_2_PLOT, removeTest=TRUE, AE_Name=AE_METHOD))]
 
-dt <- merge(frdt, rbind(rlcdt, pcandt))
+dt <- merge(frdt, otherdt)
+dt <- dt[grepl(paste0("(", paste(PVALUES_2_PLOT, collapse="|"), ")$"), score)]
 dt[,score:=gsub(" 1e-", " 10^-", score)]
 dt[,score:=gsub("P ", "italic(P)", score)]
 dt[,snptype:=factor(gsub(" ", "~", snptype), levels=c("Splice~region", "MMSplice"))]
-g1 <- ggplot(dt[grepl("Kremer", Method)], aes(enrich, FraseR)) +
+levels(dt$Method) <- gsub(" ", "~", levels(dt$Method))
+
+g1 <- ggplot(dt[snptype == "Splice~region"], aes(enrich, FraseR)) +
     geom_abline(slope=1, intercept=0) +
     geom_point(color="gray40", alpha=0.6) +
     ylab("Enrichment (FRASER)") +
-    xlab("Enrichment (Kremer et al.)") +
+    xlab("Enrichment (other method)") +
     cowplot::theme_cowplot() +
     geom_point(aes(x=1,y=1), col="white", alpha=0) +
     theme_cowplot() +
     grids() +
-    facet_grid(facets=score ~ snptype, scales="free", labeller=label_parsed) +
+    facet_grid(facets=score + snptype ~ Method, scales="free", labeller=label_parsed) +
     scale_x_log10() +
     scale_y_log10()
 g1
 
-g2 <- ggplot(dt[grepl("Gaussian", Method)], aes(enrich, FraseR)) +
+g2 <- ggplot(dt[snptype == "MMSplice"], aes(enrich, FraseR)) +
     geom_abline(slope=1, intercept=0) +
     geom_point(color="gray40", alpha=0.6) +
     ylab("Enrichment (FRASER)") +
-    xlab("Enrichment (PCA + Gaussian P)") +
+    xlab("Enrichment (other method)") +
     cowplot::theme_cowplot() +
     geom_point(aes(x=1,y=1), col="white", alpha=0) +
     theme_cowplot() +
     grids() +
-    facet_grid(facets=score ~ snptype, scales="free", labeller=label_parsed) +
+    facet_grid(facets=score + snptype ~ Method, scales="free", labeller=label_parsed) +
     scale_x_log10() +
     scale_y_log10()
 g2
@@ -123,21 +133,22 @@ g2
 #' Enrichment comparison of MMSplice and splice region
 #' 
 dt <- dt[order(tissue, score, snptype)]
-hist(dt[Method == "Kremer et al." & snptype == "MMSplice",FraseR] / dt[
-        Method == "Kremer et al." & snptype == "Splice~region",FraseR])
+hist(
+    dt[Method == "Kremer~et~al." & snptype == "MMSplice",FraseR] / 
+    dt[Method == "Kremer~et~al." & snptype == "Splice~region",FraseR])
 
 #'
 #' Arrange the plots
 #'
-g <- ggarrange(labels=LETTERS[1:2], align="hv",
+g <- ggarrange(labels=letters[1:2], align="hv", ncol=1,
     g1,
     g2)
 g
 
 
 #+ save figure
-factor <- 0.6
+factor <- 0.55
 outPng
-ggsave(outPng, g, width = 16*factor, height = 10*factor)
+ggsave(outPng, g, width = 16*factor, height = 14*factor)
 ggsave(outPdf, g, width = 16*factor, height = 10*factor)
 

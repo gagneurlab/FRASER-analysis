@@ -3,7 +3,7 @@
 #' author: Christian Mertes
 #' wb:
 #'  input:
-#'    - fds:     '`sm config["DATADIR"] + "/datasets/savedObjects/Kremer__" + config["AE_IMPLEMENTATION"] + "/pajdBetaBinomial_psiSite.h5"`'
+#'    - fds:     '`sm config["DATADIR"] + "/datasets/savedObjects/Kremer__" + config["AE_IMPLEMENTATION"] + "/padjBetaBinomial_psiSite.h5"`'
 #'    - rlds:    '`sm config["DATADIR"] + "/processedData/leafcutter/Kremer/rlds_obj.RDS"`'
 #'    - kenrich: '`sm "/s/project/abcd-net/processed/fraser_enrichment_analysis/Kremer__" + config["AE_IMPLEMENTATION"] + "_plot_data.Rds"`'
 #'  output:
@@ -47,7 +47,7 @@ outPng
 #' 
 #' Load Kremer dataset
 #' 
-fds <- loadFraseRDataSet(file=fdsFile)
+fds <- loadFraserDataSet(file=fdsFile)
 resFds <- bplapply(psiTypes, aberrant, fds=fds, padjCutoff=FDR_LIMIT,
         deltaPsiCutoff=DELTA_PSI_LIMIT, minCoverage=MIN_READ_COUNT, 
         aggregate=TRUE)
@@ -191,16 +191,20 @@ g4
 #'
 #' Arrange the plots
 #'
-g <- ggarrange(nrow=2, labels=c(NA, LETTERS[3]), heights=c(1,1.3),
-    ggarrange(ncol=2, labels=LETTERS[1:2], widths=c(1,1), 
-        g1, 
-        gvd),
-    g4)
+#g <- ggarrange(nrow=2, labels=c(NA, letters[3]), heights=c(1,1.3),
+#    ggarrange(ncol=2, labels=letters[1:2], widths=c(1,1), 
+#        g1, 
+#        gvd),
+#    g4)
+g <- ggarrange(ncol=2, labels=letters[1:2], 
+    g1, 
+    gvd)
 g
 
 
 #+ save figure
 factor <- 0.6
-ggsave(outPng, g, width = 16*factor, height = 14*factor)
-ggsave(outPdf, g, width = 16*factor, height = 8*factor)
+height <- 6.5
+ggsave(outPng, g, width = 16*factor, height = height*factor)
+ggsave(outPdf, g, width = 16*factor, height = height*factor)
 

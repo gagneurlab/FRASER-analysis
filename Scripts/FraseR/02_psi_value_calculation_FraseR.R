@@ -33,7 +33,7 @@ colDataFile <- snakemake@input$colData
 workingDir  <- dirname(dirname(dirname(snakemake@input$countsJ)))
 bpWorkers   <- bpMaxWorkers(snakemake@threads)
 bpThreads   <- bpWorkers*4
-bpProgress  <- as.logical(snakemake@params[[1]]$progress)
+bpProgress  <- as.logical(snakemake@params$progress)
 
 #'
 #' # Load count data
@@ -41,9 +41,9 @@ bpProgress  <- as.logical(snakemake@params[[1]]$progress)
 dataset
 
 #+ echo=FALSE
-fds <- loadFraseRDataSet(dir=workingDir, name=paste0("raw-", dataset))
-parallel(fds) <- MulticoreParam(bpWorkers, bpThreads,
-        progressbar=bpProgress)
+fds <- loadFraserDataSet(dir=workingDir, name=paste0("raw-", dataset))
+BPPARAM <- MulticoreParam(bpWorkers, bpThreads, progressbar=bpProgress)
+register(BPPARAM)
 
 #'
 #' Calculating PSI values
@@ -53,6 +53,6 @@ fds <- calculatePSIValues(fds)
 #'
 #' FraseR object after PSI value calculation
 #'
-fds <- saveFraseRDataSet(fds)
+fds <- saveFraserDataSet(fds)
 fds
 

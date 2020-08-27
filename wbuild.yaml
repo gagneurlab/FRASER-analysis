@@ -1,21 +1,37 @@
 ---
-webDir: ./path/to/your/webspace/FRASER-analysis
-projectTitle: FRASER-analysis
+webDir: /s/public_webshare/project/fraser/paperPipeline
+projectTitle: FraseR-analysis
 htmlOutputPath: "Output/html"
 fileRegex: .*\.R
 
 # default variables
-DATADIR:        "Output/data"
-FIGDATADIR:     "Output/figurmentTissues:iata"
+DATADIR:        "Data/paperPipeline"
+FIGDATADIR:     "Data/paperPipeline/processedData/figData"
 FIGDIR:         "Output/paper_figures"
+BENCHMARK_DIR:  "RecallAnalysis"
 PACKAGE_DIR:    "../FRASER"
 
 # datasets
 datasets: [
+    #"SimulationBB",
+    #"SimulationDM",
     "Skin_Not_Sun_Exposed_Suprapubic",
     "Kremer",
+    #"ProkischFull",
+    #"example",
+    #"Liver",
+    #"Whole_Blood",
+    #"Lung",
+    #"Muscle_Skeletal",
+    #"Skin_Sun_Exposed_Lower_leg",
+    #"Artery_Aorta",
 ]
 
+#simulated datasets
+simulated_datasets: [
+  "SimulationBB",
+  "SimulationDM"
+]
 # psi types
 psiTypes: [
   "psi3",
@@ -24,9 +40,10 @@ psiTypes: [
 ]
 
 # cutoffs
-MAF_LIMIT:         0.05
+MAF_LIMIT:         0.001
 FDR_LIMIT:         0.1
 Z_LIMIT:           0.00
+OUTLIER_RATIO:     0.005
 AE_IMPLEMENTATION: 'PCA'
 OUTLIER_INJ_FREQ:  0.001
 MIN_DPSI:          0.2
@@ -40,13 +57,15 @@ KREMER_SAMPLE_ANNOTATION_FILE: Data/rawdata/Kremer_sample_annotation.tsv
 KREMER_FILE_MAPPING:           Data/filemapping/Kremer.tsv
 
 # raw count data GTEx (V7)
-GTEX_SAMPLE_ANNOTATION_FILE: Data/rawdata/V7/GTEx_v7_Annotations_SampleAttributesDS.txt
-GTEX_PHENO_ANNOTATION_FILE:  Data/rawdata/V7/GTEx_v7_Annotations_SubjectPhenotypesDS.txt
+GTEX_SAMPLE_ANNOTATION_FILE: Data/rawdata/V6P/GTEx_Data_V6_Annotations_SampleAttributesDS.txt
+GTEX_PHENO_ANNOTATION_FILE:  Data/rawdata/V6P/GTEx_Data_V6_Annotations_SubjectPhenotypesDS.txt
 GTEX_FILE_MAPPING:           Data/filemapping/GTEx.tsv
 
 # GTEx genotype files
+# GTEXVCF_ANNO: Data/rawdata/vcfFiles/GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Indiv_GATK_HaplotypeCaller.siteOnly.vep.vcf.gz
+# GTEXVCF_GT: Data/rawdata/vcfFiles/GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Ind_GATK_HaplotypeCaller.vcf.gz
 GTEXVCF_ANNO: /s/project/sra-download/files/dbGaP-11206/phg000830.v1.GTEx_WGS.genotype-calls-vcf.c1/GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Indiv_GATK_HaplotypeCaller.siteOnly.vep.vcf.gz
-GTEXVCF_GT:   /s/project/sra-download/files/dbGaP-11206/phg000830.v1.GTEx_WGS.genotype-calls-vcf.c1/GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Ind_GATK_HaplotypeCaller.vcf.gz
+GTEXVCF_GT: /s/project/sra-download/files/dbGaP-11206/phg000830.v1.GTEx_WGS.genotype-calls-vcf.c1/GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Ind_GATK_HaplotypeCaller.vcf.gz
 
 #
 # Recall pipeline
@@ -60,6 +79,8 @@ dPsi_bins:  3
 maxRows:    100000
 
 # variable values
+inj: ["both"] #, "high", "low"]
+inj_value: ['zscore=3', 'zscore=4','zscore=6', 'zscore=2']
 Qs: ["best"]
 inj_deltas: ["uniformDistr"]
 methods: [
@@ -67,12 +88,16 @@ methods: [
     "PCA-BB-Decoder-no-weights",
     "PCA",
     "BB",
+#    "FraseR-1DecoderBatches",
+#    "FraseR-weighted",
 #    "PEER",
 ]
 GTExMethods: ["PCA", "BB", "PCA-BB-Decoder", "PCA-BB-Decoder-no-weights"]
 final_methods: ["PCA-BB-Decoder", "BB", "PCA", "PEER", "PCA-BB-Decoder-no-weights"]
-outlier_types: ["byJunctionGroup"]
+outlier_types: ["byJunctionGroup"] # ["all", "primary"]
 
+# Sort tissues by number of samples
+# wc -l Data/paperPipeline/annotations/* | sort -n | sed 's|Data.*/|"|; s|.tsv|",|'
 #
 EnrichmentTissues: [
     # main tissue to compare to
@@ -129,14 +154,24 @@ EnrichmentTissues: [
     "Lung",
     "Skin_Sun_Exposed_Lower_leg",
 ]
+GTEx_tissues: [ ]
 heatmap_tissues: [
   "Skin_Not_Sun_Exposed_Suprapubic",
   "Heart_Left_Ventricle",
   "Whole_Blood",
+  #"Liver",
+  #"Brain_Amygdala"
 ]
 reference_heatmap: "Skin_Not_Sun_Exposed_Suprapubic"
 
 reference_dataset_injectedDpsiPlot: "Skin_Not_Sun_Exposed_Suprapubic"
 nonWeighted_AE_IMPLEMENTATION: 'PCA-BB-Decoder-no-weights'
 
+
+#    "Cells_Leukemia_cell_line_CML", # is a cell line so we dont take it
+
+injection_distribution: ["uniform", "fixed"]
+injection_dpsi: [0.2, 0.3, 0.5, 0.7]
+injection_subsetting: [TRUE] #, FALSE]
+injection_startpoint: ["samplePSI", "meanPSI"]
 

@@ -2,14 +2,13 @@
 #' title: Create GTEx tissue object
 #' author: Christian Mertes
 #' wb:
-#'  threads: 3
 #'  input:
 #'    - sampleAnno:  '`sm config["GTEX_SAMPLE_ANNOTATION_FILE"]`'
 #'    - fileMapping: "Data/filemapping/GTEx.tsv"
 #'    - annoPheno:   '`sm config["GTEX_PHENO_ANNOTATION_FILE"]`'
 #'  output:
-#'    - out:    '`sm config["DATADIR"] + "/annotations/{tissue}.tsv"`'
-#'    - wBhtml: '`sm config["htmlOutputPath"] + "/annotations/{tissue}.html"`'
+#'    - out:    '`sm config["DATADIR"] + "/annotations/{tissue,[^/]+}.tsv"`'
+#'    - wBhtml: '`sm config["htmlOutputPath"] + "/annotations/{tissue,[^/]+}.html"`'
 #'  type: noindex
 #' output:
 #'  html_document:
@@ -26,7 +25,6 @@ if(FALSE){
     wildcards <- list(tissue="Lung")
     parseWBHeader2("./Scripts/DefineDatasets/gtex_tissue.R",
             wildcards=wildcards, rerun=TRUE)
-    threads <- 10
 }
 
 
@@ -35,7 +33,6 @@ outFile       <- snakemake@output$out
 annoFile      <- snakemake@input$sampleAnno
 annoPhenoFile <- snakemake@input$annoPheno
 mappingFile   <- snakemake@input$fileMapping
-threads       <- snakemake@threads
 
 #+ dataset name
 name <- gsub(".tsv$", "", basename(outFile))
@@ -47,7 +44,7 @@ name
 anno      <- fread(annoFile)
 annoPheno <- fread(annoPhenoFile)
 mapping   <- fread(mappingFile)
-sraDT     <- getSRAProjectTable(mc.cores=threads)
+sraDT     <- getSRAProjectTable()
 
 #' Clean input variables
 anno <- anno[!grepl('^K-562', SAMPID)] # remove k562 cell line
@@ -75,7 +72,7 @@ name
 #'
 #' * Remove unwanted samples from dataset
 #'
-colData <- colData[SMAFRZE == "RNASEQ"]
+colData <- colData[SMAFRZE == "USE ME"]
 colData <- colData[SMRIN >= 5.7]
 
 #'

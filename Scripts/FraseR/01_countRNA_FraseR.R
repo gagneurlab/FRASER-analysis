@@ -33,8 +33,8 @@ dataset     <- snakemake@wildcards$dataset
 colDataFile <- snakemake@input$colData
 workingDir  <- dirname(dirname(dirname(snakemake@output$countsJ)))
 bpWorkers   <- bpMaxWorkers(snakemake@threads)
-bpProgress  <- as.logical(snakemake@params[[1]]$progress)
-iThreads    <- max(1, min(as.integer(c(bpworkers() / 5, snakemake@params[[1]]$internalThreads))))
+bpProgress  <- as.logical(snakemake@params$progress)
+iThreads    <- max(1, min(as.integer(c(bpworkers() / 5, snakemake@params$internalThreads))))
 
 #'
 #' # Dataset
@@ -57,12 +57,12 @@ if("genome" %in% colnames(colData)){
 BPPARAM <- MulticoreParam(bpWorkers, nrow(colData), progressbar=bpProgress)
 register(BPPARAM)
 
-fds <- FraseRDataSet(colData,
+fds <- FraserDataSet(colData,
         workingDir = workingDir,
         name       = paste0("raw-", dataset))
 fds <- countRNAData(fds, NcpuPerSample=iThreads, recount=TRUE, 
         minAnchor=5, genome=genome)
-fds <- saveFraseRDataSet(fds)
+fds <- saveFraserDataSet(fds)
 
 #'
 #' FraseR object after counting

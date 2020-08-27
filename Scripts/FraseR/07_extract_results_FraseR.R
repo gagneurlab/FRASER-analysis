@@ -3,7 +3,7 @@
 #' author: Christian Mertes
 #' wb:
 #'  input:
-#'   - fdsin: '`sm config["DATADIR"] + "/datasets/savedObjects/{dataset}__{method}/pajdBetaBinomial_psiSite.h5"`'
+#'   - fdsin: '`sm config["DATADIR"] + "/datasets/savedObjects/{dataset}__{method}/padjBetaBinomial_psiSite.h5"`'
 #'   - html:  '`sm config["htmlOutputPath"] + "/FraseR/{dataset}/{method}_stat_calculation.html"`'
 #'  output:
 #'   - resultTable: '`sm config["DATADIR"] + "/processedData/results/{dataset}/{method}_results.tsv"`'
@@ -46,9 +46,9 @@ method
 workingDir
 
 #+ echo=FALSE
-fds <- loadFraseRDataSet(dir=workingDir, name=name)
+fds <- loadFraserDataSet(dir=workingDir, name=name)
 bpparam <- MulticoreParam(3, 3)
-parallel(fds) <- bpparam
+register(bpparam)
 
 #'
 #' ## Extract results
@@ -56,7 +56,7 @@ parallel(fds) <- bpparam
 fds <- annotateRanges(fds)
 resgr <- results(fds, zScoreCutoff=NA, padjCutoff=0.9, deltaPsiCutoff=0.05)
 res   <- as.data.table(resgr)
-saveFraseRDataSet(fds)
+saveFraserDataSet(fds)
 
 #'
 #' * Add features

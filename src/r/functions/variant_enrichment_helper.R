@@ -1,30 +1,48 @@
-load_fraser_enrichment_data <- function(file, internCPUs=3, minCoverage=10,
-                    minDeltaPsi=0.1, debug=FALSE){
+load_fraser_enrichment_data <- function(file, minCoverage=10, minDeltaPsi=0.1, 
+                mc.cores_psi=3, internCPUs=3, debug=FALSE){
     curTissue <- basename(strsplit(file, "__")[[1]][1])
     curMethod <- dirname(strsplit(file, "__")[[1]][2])
     
     # get results
-    fds <- loadFraseRDataSet(file=file)
+    fds <- loadFraserDataSet(file=file)
     if(debug == TRUE){
-        fds <- fds[seqnames(fds) %in% c(1, 2, "chr1", "chr2"), 1:50]
+        fds <- fds[seqnames(fds) %in% c(2, 3, "chr2", "chr3"), 1:50]
     }
     fds <- annotateRanges(fds)
-    mc.cores <- 3
+    
     resls <- mclapply(psiTypes, extractCalls4Enrichment, 
-            mc.cores=mc.cores, Ncpus=internCPUs, fds=fds, 
+            mc.cores=mc.cores_psi, Ncpus=internCPUs, fds=fds, 
             minCoverage=minCoverage, minDeltaPsi=minDeltaPsi)
     
-    res <- rbindlist(resls)[!is.na(hgnc_symbol),.(
+    # all results combined
+    resAll <- rbindlist(resls)[!is.na(hgnc_symbol),.(
         pvalue=min(pvalue),
         pvalue_norm=min(pvalue_norm),
         zscore=zscore[abs(zscore) == max(abs(zscore))][1]),
         by="hgnc_symbol,sampleID"]
     
-    ans <- res[,.(subjectID=sampleID, geneID=hgnc_symbol, p=pvalue,
-                  z=zscore, p_norm=pvalue_norm, tissue=curTissue)][order(p)]
+    # psi results only 
+    resPsi <- rbindlist(resls[c("psi5", "psi3")])[!is.na(hgnc_symbol),.(
+        p_psi_only=min(pvalue)),
+        by="hgnc_symbol,sampleID"]
     
-    names(ans) <- c("subjectID", "geneID",
-                    paste0(curMethod, c("_p", "_z", "_np")), "tissue")
+    # theta resutls only
+    resTheta <- rbindlist(resls['psiSite'])[!is.na(hgnc_symbol),.(
+        p_theta_only=min(pvalue)),
+        by="hgnc_symbol,sampleID"]
+    
+    # merge and ensure a valid p value
+    res <- merge(resAll, merge(resPsi, resTheta, all=TRUE), 
+            all=TRUE, by=c("sampleID", "hgnc_symbol"))
+    res[is.na(zscore),zscore:=0]
+    res[is.na(res)] <- 1
+    
+    ans <- res[,.(subjectID=sampleID, geneID=hgnc_symbol, p=pvalue,
+            z=zscore, p_norm=pvalue_norm, p_psi_only, p_theta_only, 
+            tissue=curTissue)][order(p)]
+    
+    names(ans) <- c("subjectID", "geneID", paste0(curMethod, 
+            c("_p", "_z", "_np", "_psi_only_p", "_theta_only_p")), "tissue")
     
     if(isTRUE(debug)){
         ans <- list(enrich_obj=ans[,-"tissue"], fds=fds, res=res[pvalue<0.1])
@@ -108,22 +126,33 @@ extractCalls4Enrichment <- function(fds, type, minCoverage=10, minDeltaPsi=0.1,
 }
 
 
-calculateEnrichment <- function(dt, cols, cutOff, isZscore=TRUE, na.rm=FALSE){
-    dt <- copy(dt)
+calculateEnrichment <- function(dt, cols, cutOff, isZscore=TRUE, na.rm=FALSE, multiCall=0){
+    dttmp <- copy(dt[,.(subjectID, geneID, tissue, simple_conseq, score=get(cols))])
     if(isTRUE(isZscore)){
         if(isTRUE(na.rm)){
-            dt[is.na(get(cols)), c(cols):=0]
+            dttmp[is.na(score), c(cols):=0]
         }
-        dt[,cutoff:=abs(get(cols)) > cutOff]
+        dttmp[,cutoff:=abs(score) > cutOff]
     } else {
         if(isTRUE(na.rm)){
-            dt[is.na(get(cols)), c(cols):=1]
+            dttmp[is.na(score), c(cols):=1]
         }
-        dt[,cutoff:=get(cols) < cutOff]
+        dttmp[,cutoff:=score < cutOff]
+    }
+    if(multiCall > 0){
+        cols_multi <- paste0(cols, "_numMultiCall")
+        if(!cols_multi %in% colnames(dt)){
+            warning(cols_multi, " not there in table!")
+            return(NULL)
+        }
+        dttmp[,mtoc:=dt[,get(cols_multi) >= multiCall]]
+        dttmp[cutoff == TRUE & is.na(mtoc),   cutoff:=FALSE]
+        dttmp[cutoff == TRUE & mtoc == FALSE, cutoff:=FALSE]
+        dttmp[cutoff == TRUE]
     }
 
-    ans <- dt[, .(nRareEvent=sum(!is.na(simple_conseq)), 
-            total=.N, nNA=sum(is.na(get(cols)))), by=cutoff]
+    ans <- dttmp[, .(nRareEvent=sum(!is.na(simple_conseq)), 
+            total=.N, nNA=sum(is.na(score))), by=cutoff]
     if(!any(ans$cutoff == FALSE, na.rm = TRUE)){
         ans <- rbind(ans, data.table(cutoff=FALSE, nRareEvent=0, total=0, nNA=0))
     }
@@ -142,7 +171,8 @@ calculateEnrichment <- function(dt, cols, cutOff, isZscore=TRUE, na.rm=FALSE){
     max.ci = enrich * exp(1.96*log.se)
     min.ci = enrich * exp(-1.96*log.se)
 
-    return(list(dt=ans, enrichment=enrich, max.ci=max.ci, min.ci=min.ci))
+    return(list(dt=ans, enrichment=enrich, max.ci=max.ci, min.ci=min.ci, 
+            multiCall=multiCall))
 }
 
 getEnrichmentForMethod <- function(dt, method, cutoffs=c(0.005, 2)){

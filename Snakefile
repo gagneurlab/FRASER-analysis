@@ -1,8 +1,10 @@
 import pandas as pd
 import pathlib
 import wbuild
+config['wBuildPath'] =  str(pathlib.Path(wbuild.__file__).parent)
 
 configfile: "wbuild.yaml"
+
 htmlOutputPath = config['htmlOutputPath']
 
 # sub-part of enrichment pipeline
@@ -10,7 +12,7 @@ include: "Scripts/Leafcutter/leafcutter_snakemake_functions.py"
 include: "Scripts/GTExEnrichment/enrichment.snake"
 
 # parse main wbuild script
-include: ".wBuild/wBuild.snakefile"
+include: config['wBuildPath'] + "/wBuild.snakefile"
 
 rule all:
 	input: rules.Index.output, htmlOutputPath + "/readme.html"
@@ -22,11 +24,6 @@ rule prepub:
         rsync -Ort {config[htmlOutputPath]} {config[webDir]}
         chmod -R uo+rX {config[webDir]}
     """
-
-rule defineDatasets:
-    input: 
-        expand(config["DATADIR"] + "/annotations/{dataset}.tsv", dataset=config["datasets"] + config["EnrichmentTissues"]),
-        expand(config["DATADIR"] + "/processedData/leafcutter/{dataset}/rlds_anno.tsv", dataset=config["datasets"] + config["EnrichmentTissues"])
 
 rule supplement_pdf:
     input:
@@ -46,3 +43,10 @@ rule supplement_pdf:
         gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress -dNOPAUSE \
             -dQUIET -dBATCH -sOutputFile='../../../{output}.reduced.pdf' '../../../{output}'
     """
+
+rule exportData:
+    input:
+        expand(config["DATADIR"] + "/export/fds_objects/{dataset}__FRASER_FDS.xz.RDS", dataset=list(set(config["EnrichmentTissues"] + config["datasets"])))
+    shell: "echo Export done"
+
+

@@ -3,7 +3,7 @@
 #' author: Ines Scheller
 #' wb:
 #'  input:
-#'   - Figure1: 'Data/figures/Fig1-FraseR-overview.svg'
+#'   - Figure1: 'Data/paper/figures_svg/Fig1-FraseR-overview.svg'
 #'  output:
 #'  - png: '`sm config["FIGDIR"] + "/Figure1_scheme.png"`'
 #'  - pdf: '`sm config["FIGDIR"] + "/Figure1_scheme.pdf"`'

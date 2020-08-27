@@ -1,0 +1,57 @@
+name: fraser-analysis
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  # main FRASER and snakemake/wbuild dependencies
+  - python>=3.7,<3.8
+  - pip
+  - r-base==4.0
+  - wbuild==1.7.0
+  - r-rmarkdown
+  - bioconductor-fraser==1.0.1
+  - bioconductor-bsgenome.hsapiens.ucsc.hg19
+  - r-reticulate
+  - r-ggpubr
+  - r-ggrepel
+  - r-gplots
+  - r-ggforce
+  - r-reshape
+  - r-ggbeeswarm
+  - r-gsubfn
+  - r-rjson
+  - bioconductor-sradb
+  - r-pacman
+
+  # SPOT dependencies
+  - numpy
+  - pystan
+
+  # Leafcutter dependencies
+  - samtools
+  - r-rstan
+  - r-rstantools
+  - r-hmisc
+  - r-doMC
+  - r-optparse
+  - r-shiny
+  - r-shinyjs
+  - r-intervals
+  - r-shinycssloaders
+  - r-R.methodsS3
+  - r-png
+  - r-jpeg
+  - r-fastmap
+  - r-acepack
+  - r-oompaData
+  - bioconductor-dirichletmultinomial
+  - bioconductor-biobase
+  - libgcc
+  - r-biocmanager
+
+    #- r-TailRank
+  - r-shinyjs
+  - r-devtools
+

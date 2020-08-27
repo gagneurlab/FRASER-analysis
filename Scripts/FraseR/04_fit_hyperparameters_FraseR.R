@@ -3,7 +3,7 @@
 #' author: Christian Mertes
 #' wb:
 #'  params:
-#'   - progress: FALSE
+#'   - progress: false
 #'  input:
 #'   - dPsiSS: '`sm config["DATADIR"] + "/datasets/savedObjects/{dataset}/fds-object.RDS"`'
 #'   - html:   '`sm config["htmlOutputPath"] + "/FraseR/{dataset}_filterExpression.html"`'
@@ -33,9 +33,9 @@ dataset    <- snakemake@wildcards$dataset
 method     <- snakemake@wildcards$method
 name       <- paste0(dataset, "__", method)
 workingDir <- file.path(snakemake@config$DATADIR, "datasets")
-bpWorkers   <- bpMaxWorkers(snakemake@threads)
+bpWorkers  <- bpMaxWorkers(snakemake@threads)
 bpThreads  <- 100
-bpProgress <- snakemake@params[[1]]$progress
+bpProgress <- as.logical(snakemake@params$progress)
 
 
 #'
@@ -45,7 +45,7 @@ dataset
 name
 
 #+ echo=FALSE
-fds <- loadFraseRDataSet(dir=workingDir, name=dataset)
+fds <- loadFraserDataSet(dir=workingDir, name=dataset)
 
 #' Drop unneded columns/assays so we dont carry them along
 metadata(fds) <- list()
@@ -67,7 +67,7 @@ for(type in c("j", "ss")){
 gc()
 
 #' Resave the data to new folder
-fds <- saveFraseRDataSet(fds, dir=workingDir, name=name, rewrite=TRUE)
+fds <- saveFraserDataSet(fds, dir=workingDir, name=name, rewrite=TRUE)
 BPPARAM <- MulticoreParam(bpWorkers, bpThreads, progressbar=bpProgress)
 gc()
 
@@ -81,15 +81,15 @@ for(type in psiTypes){
     noise_param <- c(0.5) # c(0.5, 1.5)
     minDeltaPsi <- 0.1
 
-    fds <- optimHyperParams(fds, type=type, correction=method, iterations=4,
+    fds <- optimHyperParams(fds, type=type, implementation=method, iterations=4,
             q_param=q_param, noise_param=noise_param, BPPARAM=BPPARAM,
             internalThreads=1)
-    fds <- saveFraseRDataSet(fds)
+    fds <- saveFraserDataSet(fds)
 }
 
 #'
 #' FraseR object
 #'
-fds <- saveFraseRDataSet(fds)
+fds <- saveFraserDataSet(fds)
 fds
 

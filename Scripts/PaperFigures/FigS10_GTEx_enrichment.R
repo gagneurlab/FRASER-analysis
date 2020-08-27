@@ -80,9 +80,15 @@ dt2plot <- rbindlist(bplapply(
 dt2plot[snptype == "rareSplicing", snptype:="Splice region"]
 dt2plot[snptype == "rareMMSplice", snptype:="MMSplice"]
 dt2plot[,snptype:=factor(snptype, levels=c("Splice region", "MMSplice"))]
-dt2plot <- dt2plot[Method != "BB_np"]
-dt2plot <- dt2plot[!(Method == "Leafcutter_p" & dcut == "0.0")]
+dt2plot <- dt2plot[Method != "BB_np" & !grepl("_only_", Method)]
+dt2plot <- dt2plot[!(Method == "Leafcutter_p" & dcut == "0.1")]
 dt2plot
+
+#' 
+#' remove multi tissue calls
+#' 
+dt2plot <- dt2plot[multiCall == 1]
+tibble(dt2plot)
 
 #'
 #' Create P value enrichment plot
@@ -92,21 +98,26 @@ dt2plot
 AE_METHOD <- paste0(FraseR_implementation, "_p")
 frdt   <- dt2plot[cutoff == TRUE & Method == AE_METHOD, .(
         FRASER=enrichment, FRASER_min=min.ci, FRASER_max=max.ci,
-        tissue, score, snptype, dcut)]
+        tissue, score, snptype, dcut, multiCall)]
 
 tmpdt2p <- merge(dt2plot[cutoff == TRUE & grepl("P < ", score) & 
         Method != AE_METHOD & !grepl("no-weights", Method)], frdt)
 tmpdt2p[,pvalType:=ifelse(grepl("_np", Method), "Gaussian P", "BetaBinom P")]
 tmpdt2p[,dcut:=paste0("|dPSI| > ", dcut)]
-tmpdt2p[grepl("Leafcutter", Method), pvalType:="DM P"]
-tmpdt2p[grepl("Leafcutter", Method), dcut:=""]
+tmpdt2p[grepl("Leafcutter|SPOT", Method), pvalType:="DM P"]
+tmpdt2p[grepl("Leafcutter_|SPOT_", Method), dcut:=""]
 tmpdt2p[,Method:=mName4Plot(Method, removeTest=TRUE, AE_METHOD)]
 tmpdt2p[Method == "BetaBinom", Method:="Naïve"]
 tmpdt2p[Method == "BB-AE-weight", Method:="BB-regression"]
 
 tmpdt2p
 
-gp1 <- ggplot(tmpdt2p[snptype == "Splice region" & grepl("> 0.1", dcut)], aes(enrichment, FRASER)) +
+#' 
+#' rare splicing with additional cutoff
+#' 
+tdata <- tmpdt2p[snptype == "Splice region" & grepl("> 0.1", dcut) & 
+        !(Method == "BB-regression" & pvalType == "Gaussian P")]
+gp1 <- ggplot(tdata, aes(enrichment, FRASER)) +
     geom_abline(slope=1, intercept=0) +
     geom_point(color="gray40", alpha=0.6) +
     ylab("Enrichment (FRASER)") +
@@ -119,7 +130,12 @@ gp1 <- ggplot(tmpdt2p[snptype == "Splice region" & grepl("> 0.1", dcut)], aes(en
     scale_y_log10()
 gp1
 
-gp2 <- ggplot(tmpdt2p[snptype == "Splice region" & !grepl("> 0.1", dcut)], aes(enrichment, FRASER)) +
+
+#'
+#' rare splicing and no additional cutoff
+#' 
+tdata <- tmpdt2p[snptype == "Splice region" & !grepl("> 0.1", dcut)]
+gp2 <- ggplot(tdata, aes(enrichment, FRASER)) +
     geom_abline(slope=1, intercept=0) +
     geom_point(color="gray40", alpha=0.6) +
     ylab("Enrichment (FRASER)") +
@@ -132,7 +148,12 @@ gp2 <- ggplot(tmpdt2p[snptype == "Splice region" & !grepl("> 0.1", dcut)], aes(e
     scale_y_log10()
 gp2
 
-gp3 <- ggplot(tmpdt2p[snptype == "MMSplice" & grepl("> 0.1", dcut)], aes(enrichment, FRASER)) +
+#'
+#' rare MMSplice and additional cutoff
+#' 
+tdata <- tmpdt2p[snptype == "MMSplice" & grepl("> 0.1", dcut) &
+        !(Method == "BB-regression" & pvalType == "Gaussian P")]
+gp3 <- ggplot(tdata, aes(enrichment, FRASER)) +
     geom_abline(slope=1, intercept=0) +
     geom_point(color="gray40", alpha=0.6) +
     ylab("Enrichment (FRASER)") +
@@ -145,7 +166,11 @@ gp3 <- ggplot(tmpdt2p[snptype == "MMSplice" & grepl("> 0.1", dcut)], aes(enrichm
     scale_y_log10()
 gp3
 
-gp4 <- ggplot(tmpdt2p[snptype == "MMSplice" & !grepl("> 0.1", dcut)], aes(enrichment, FRASER)) +
+#'
+#' rare MMSplice and no additional cutoff
+#' 
+tdata <- tmpdt2p[snptype == "MMSplice" & !grepl("> 0.1", dcut)]
+gp4 <- ggplot(tdata, aes(enrichment, FRASER)) +
     geom_abline(slope=1, intercept=0) +
     geom_point(color="gray40", alpha=0.6) +
     ylab("Enrichment (FRASER)") +
@@ -193,19 +218,24 @@ gz
 #' Assemble figure
 #'
 #+ assemble full figure
-g <- ggarrange(ncol=2, nrow=2, labels=LETTERS[1:4], align="hv", widths=c(5,4),
+#g <- ggarrange(ncol=2, nrow=2, labels=LETTERS[1:4], align="hv", widths=c(6,4),
+#    gp2 + ggtitle(expression(paste("Splice variants with no additional ", Delta, psi, " cutoff"))),
+#    gp1 + ggtitle(expression(paste("Splice variants with a |", Delta, psi, "|" > 0.1~"cutoff"))),
+#    gp4 + ggtitle(expression(paste("MMSplice variants with no additional ", Delta, psi, " cutoff"))),
+#    gp3 + ggtitle(expression(paste("MMSplice variants with a |", Delta, psi, "|" > 0.1~"cutoff"))))
+g <- ggarrange(nrow=3, labels=c(letters[1:2], ""), heights=c(2,2,2),
     gp2 + ggtitle(expression(paste("Splice variants with no additional ", Delta, psi, " cutoff"))),
-    gp1 + ggtitle(expression(paste("Splice variants with a |", Delta, psi, "|" > 0.1~"cutoff"))),
     gp4 + ggtitle(expression(paste("MMSplice variants with no additional ", Delta, psi, " cutoff"))),
-    gp3 + ggtitle(expression(paste("MMSplice variants with a |", Delta, psi, "|" > 0.1~"cutoff"))))
-
+    ggarrange(ncol=2, labels=letters[3:4], 
+        gp1 + ggtitle(expression(paste("Splice variants with a |", Delta, psi, "|" > 0.1~"cutoff"))),
+        gp3 + ggtitle(expression(paste("MMSplice variants with a |", Delta, psi, "|" > 0.1~"cutoff")))))
 g
 
 #+ save p value enrichment figure
-factor <- 0.8
+factor <- 0.71
 outPPng
-ggsave(outPPng, g, width = 17*factor, height = 14*factor)
-ggsave(outPPdf, g, width = 17*factor, height = 14*factor)
+ggsave(outPPng, g, width = 16*factor, height = 19*factor)
+ggsave(outPPdf, g, width = 16*factor, height = 19*factor)
 
 
 #+ save z score enrichment figure

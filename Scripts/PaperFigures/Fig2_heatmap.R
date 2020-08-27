@@ -45,7 +45,7 @@ datasets
 outPng
 
 #+ echo=FALSE
-fds_ls <- lapply(datasets, loadFraseRDataSet, dir=workingDir)
+fds_ls <- lapply(datasets, loadFraserDataSet, dir=workingDir)
 names(fds_ls) <- datasets
 
 stats_ls <- lapply(statFiles, readRDS)
@@ -199,7 +199,7 @@ get_heatmap_grob <- function(gt, spacing=10){
 displayNames <- dName4plot(datasets, TRUE)
 displayNames[grepl("Skin not Sun Exposed", displayNames)] <- "Suprapubic Skin"
 g <- ggarrange(nrow=3, heights=c(8, 0.3, 5),
-        ggarrange(nrow=1, widths=c(1,10,10,10,4.5), labels=c("", "A", "B", "C", ""),
+        ggarrange(nrow=1, widths=c(1,10,10,10,4.5), labels=c("", letters[1:3], ""),
                 font.label=list(size=20, face="bold"),
                 grid.text("Introns                          ", rot=90, gp=gpar(fontsize=14)),
                 get_heatmap_grob(heatmap[[1]][4]$gtable),
@@ -208,11 +208,14 @@ g <- ggarrange(nrow=3, heights=c(8, 0.3, 5),
                 get_legend_grob(heatmap[[3]][4]$gtable, spacing=60)),
         ggarrange(ncol=5, widths=c(1.3, 9, 9, 9, 5),
                 grid.text(""),
-                grid.text(paste("  ", displayNames[1], "samples"), gp=gpar(fontsize=14)),
-                grid.text(paste("        ", displayNames[2], "samples"), gp=gpar(fontsize=14)),
-                grid.text(paste("                     ", displayNames[3], "samples"), gp=gpar(fontsize=14)),
+                grid.text(paste("  ",      
+                        displayNames[1], "samples"), gp=gpar(fontsize=14)),
+                grid.text(paste("        ",
+                        displayNames[2], "samples"), gp=gpar(fontsize=14)),
+                grid.text(paste("                     ",
+                        displayNames[3], "samples"), gp=gpar(fontsize=14)),
                 grid.text("")),
-        ggarrange(ncol=1, labels=c("D"), label.y=1.05,
+        ggarrange(ncol=1, labels=letters[4], label.y=1.05,
                 font.label=list(size=20, face="bold"),
                 corBoxplots + theme(legend.position="right")))
 g

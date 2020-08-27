@@ -3,7 +3,7 @@
 #' author: Ines Scheller
 #' wb:
 #'  input:
-#'   - fdsFile: '`sm config["DATADIR"] + "/datasets/savedObjects/{dataset}__BB/delta_psiSite.h5"`'
+#'   - inFile: 'Output/html/FraseR/{dataset}_hyper_parameter_optimization.html'
 #'  output:
 #'   - fdsOut: '`sm config["DATADIR"] + "/datasets/inject_{delta}/{psiType}/savedObjects/{dataset}/fds-object.RDS"`'
 #'   - trueOut: '`sm config["DATADIR"] + "/datasets/inject_{delta}/{psiType}/savedObjects/{dataset}/trueOutliers_{psiType}.h5"`'

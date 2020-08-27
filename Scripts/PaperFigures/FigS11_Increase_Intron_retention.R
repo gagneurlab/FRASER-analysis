@@ -61,14 +61,14 @@ loadResF <- function(f){
             sampleID=indivID, type=ifelse(type != "psiSite", "psi", type))])
 }
 
-fdsData <- mclapply(fdsresFiles, loadResF, mc.cores=4)
-rlData  <- mclapply(rlresFiles,  loadResL, mc.cores=4)
+fdsData <- bplapply(fdsresFiles, loadResF, BPPARAM=BPPARAM)
+rlData  <- bplapply(rlresFiles,  loadResL, BPPARAM=BPPARAM)
 anno    <- rbindlist(lapply(annoFiles, fread))[,.N,by=SMTSD][,.(N, tissue=SMTSD)]
 
 #'
 #' Percentage of intron retention and overlap
 #' 
-dt2p <- rbindlist(mclapply(fdsData, mc.cores=4, function(x) {
+dt2p <- rbindlist(bplapply(fdsData, BPPARAM=BPPARAM, function(x) {
     x[, 
         paste(unique(sort(type)), collapse=","), by="gene,sampleID,tissue"][,
         .(percentage=as.vector(table(V1)/.N), n=.N, type=names(table(V1))), by="tissue"] }))
@@ -165,7 +165,7 @@ g4
 #' Arrange the plots
 #'
 gf1 <- ggarrange(nrow=2, heights=c(20,1),
-    ggarrange(ncol=4, labels=LETTERS[1:4], widths=c(2.5,1,1,1), legend="none",
+    ggarrange(ncol=4, labels=letters[1:4], widths=c(2.5,1,1,1), legend="none",
         align="h", label.x=c(0, -0.05, -0.05, -0.05),
         g1 + coord_flip(),
         g2 + theme(axis.text.y=element_blank(), axis.title.y=element_blank()) + coord_flip(),
@@ -177,7 +177,7 @@ gf1 <- ggarrange(nrow=2, heights=c(20,1),
         get_legend(g3 + theme(legend.position="bottom"))))
 gf1
 
-gf2 <- ggarrange(ncol=2, labels=LETTERS[1:2], widths=c(2,1), 
+gf2 <- ggarrange(ncol=2, labels=letters[1:2], widths=c(2,1), 
         legend="right", common.legend=TRUE,
         align="h", label.x=c(0, -0.05),
         g1 + coord_flip(),
@@ -187,6 +187,7 @@ gf2
 
 #+ save figure
 factor <- 0.7
+outPng
 ggsave(outPng, gf2, width = 13*factor, height = 16*factor)
 ggsave(outPdf, gf2, width = 13*factor, height = 16*factor)
 

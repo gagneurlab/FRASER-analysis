@@ -48,7 +48,7 @@ outPng <- snakemake@output$outPng
 # f <- fdsFiles[1]
 dt2p <- rbindlist(mclapply(fdsFiles, mc.cores=threads, mc.preschedule=FALSE,
     function(f){
-        fds    <- loadFraseRDataSet(file=f)
+        fds    <- loadFraserDataSet(file=f)
         tissue <- gsub("__.*", "", basename(dirname(f)))
         rbindlist(lapply(psiTypes, function(type){
             pv <- as.matrix(pVals(fds, type=type, byGroup=TRUE))
@@ -100,7 +100,7 @@ g2
 #' Assemble figures
 #'
 #+ assemble figure for psi5
-g <- ggarrange(common.legend=TRUE, legend="right", labels=LETTERS[1:2], ncol=1,
+g <- ggarrange(common.legend=TRUE, legend="right", labels=letters[1:2], ncol=1,
         heights=c(2,1),
         g1 + theme_bw(),
         g2 + theme_bw())

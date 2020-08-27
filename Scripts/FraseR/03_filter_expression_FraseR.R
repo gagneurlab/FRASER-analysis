@@ -36,7 +36,7 @@ register(MulticoreParam(15))
 dataset
 
 #+ load data, echo=FALSE
-fds <- loadFraseRDataSet(dir=workingDir, name=paste0("raw-", dataset))
+fds <- loadFraserDataSet(dir=workingDir, name=paste0("raw-", dataset))
 
 
 #'
@@ -49,9 +49,9 @@ plotFilterExpression(fds)
 
 
 #+ filter bad junctions, echo=FALSE
-devNull <- saveFraseRDataSet(fds)
+devNull <- saveFraserDataSet(fds)
 name(fds) <- dataset
-fds <- saveFraseRDataSet(fds[mcols(fds, type="j")[,"passed"]])
+fds <- saveFraserDataSet(fds[mcols(fds, type="j")[,"passed"]])
 
 #'
 #' Correlation of counts after filtering

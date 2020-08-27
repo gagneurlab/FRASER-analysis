@@ -12,17 +12,18 @@
 #'  type: noindex
 #'---
 
-#+ load config and setup, echo=FALSE
-source("./src/r/config.R")
-load_all("../rare-disease-leafcutter/")
-
-
 if(FALSE){
     source(".wBuild/wBuildParser2.R")
     wildcards <- list(dataset="Skin_Not_Sun_Exposed_Suprapubic")
     parseWBHeader2("Scripts/Leafcutter/01_create_rlds.R",
             wildcards=wildcards, rerun=TRUE)
 }
+
+
+#+ load config and setup, echo=FALSE
+source("./src/r/config.R")
+load_all("../rare-disease-leafcutter/")
+opts_chunk$set(fig.width=12, fig.height=8)
 
 
 #+ input

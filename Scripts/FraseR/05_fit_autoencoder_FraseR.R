@@ -20,15 +20,15 @@
 ##   Add a link to the fraser object to have a proper chain of events in wbuild
 ##
 
+#+ echo=FALSE
+source("./src/r/config.R")
+
 if(FALSE){
     source(".wBuild/wBuildParser2.R")
     wildcards <- list(dataset="Kremer", method="BB")
-    parseWBHeader2("Scripts/FraseR/05_fit_autoencoder_FraseR.R", wildcards)
-    slot(snakemake, "wildcards", check=FALSE) <- wildcards
+    parseWBHeader2("Scripts/FraseR/05_fit_autoencoder_FraseR.R", 
+            wildcards=wildcards, rerun=TRUE)
 }
-
-#+ echo=FALSE
-source("./src/r/config.R")
 
 #+ input
 inputFile  <- snakemake@input$dPsiSS
@@ -36,8 +36,8 @@ dataset    <- snakemake@wildcards$dataset
 method     <- snakemake@wildcards$method
 name       <- basename(dirname(inputFile))
 workingDir <- dirname(dirname(dirname(inputFile)))
-bpWorkers   <- bpMaxWorkers(snakemake@threads)
-bpProgress <- snakemake@params[[1]]$progress
+bpWorkers  <- bpMaxWorkers(snakemake@threads)
+bpProgress <- as.logical(snakemake@params$progress)
 
 
 #'
@@ -48,9 +48,9 @@ method
 workingDir
 
 #+ echo=FALSE
-fds <- loadFraseRDataSet(dir=workingDir, name=name)
+fds <- loadFraserDataSet(dir=workingDir, name=name)
 BPPARAM <- MulticoreParam(bpWorkers, progressbar=bpProgress)
-parallel(fds) <- BPPARAM
+register(BPPARAM)
 
 #'
 #' # Fit autoencoder
@@ -69,16 +69,16 @@ for(type in psiTypes){
     probE <- max(0.001, min(1,30000/curDims[1]))
 
     # run autoencoder
-    fds <- fit(fds, q=q, type=type, correction=method, verbose=TRUE,
+    fds <- fit(fds, q=q, type=type, implementation=method, verbose=TRUE,
             iterations=15, nSubset=15000, noiseAlpha=noise, BPPARAM=BPPARAM)
 
     # save autoencoder fit
-    fds <- saveFraseRDataSet(fds)
+    fds <- saveFraserDataSet(fds)
 }
 
 
 #'
 #' # Save results
 #'
-fds <- saveFraseRDataSet(fds)
+fds <- saveFraserDataSet(fds)
 

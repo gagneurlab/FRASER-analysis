@@ -34,11 +34,11 @@ outFile    <- snakemake@output$stats
 workingDir <- dirname(dirname(dirname(fdsFile)))
 name       <- basename(dirname(fdsFile))
 
-FDR_LIMIT       <- 0.1
-DELTA_PSI_LIMIT <- 0.3
-Z_SCORE_LIMIT   <- 2
-MIN_COVERAGE    <- 10
-
+FDR_LIMIT          <- 0.1
+DELTA_PSI_LIMIT    <- 0.3
+Z_SCORE_LIMIT      <- 2
+MIN_COVERAGE       <- 10
+CORRELATION_DIGITS <- 2
 #'
 #' # Load data
 #'
@@ -49,8 +49,8 @@ method
 workingDir
 
 #+ echo=FALSE
-fds <- loadFraseRDataSet(dir=workingDir, name=name)
-fds_raw <- loadFraseRDataSet(dir=workingDir, name=paste0("raw-", dataset))
+fds <- loadFraserDataSet(dir=workingDir, name=name)
+fds_raw <- loadFraserDataSet(dir=workingDir, name=paste0("raw-", dataset))
 BPPARAM <- MulticoreParam(10, 10)
 register(BPPARAM)
 
@@ -185,7 +185,9 @@ corDT <- rbindlist(lapply(psiTypes, function(type){
     skmat <- kmat[expRowsMax & expRowsMedian,]
     snmat <- nmat[expRowsMax & expRowsMedian,]
     xmat  <- (skmat + 1)/(snmat + 2)
-
+    xmat  <- pmin(pmax(round(xmat, CORRELATION_DIGITS), 
+              10^-CORRELATION_DIGITS),
+            1-10^-CORRELATION_DIGITS)
     xmat_sd <- rowSds(xmat)
     plotIdx <- rank(xmat_sd) >= length(xmat_sd) - topN
     xmat <- xmat[plotIdx,]
